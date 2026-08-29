@@ -116,7 +116,7 @@ export default function Footer() {
           <p className="text-sm font-medium text-white/50">
             Designed &amp; Developed by{" "}
             <a
-              href="https://anil-portfolio-dev.vercel.app/"
+              // href="https://anil-portfolio-dev.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gold-500 hover:text-gold-400 transition-colors underline"
