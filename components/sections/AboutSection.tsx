@@ -6,12 +6,13 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import Reveal from "@/components/ui/Reveal";
-import { aboutContent } from "@/lib/content";
-import { prefersReducedMotion, ANIM } from "@/lib/animations";
+import { useContent } from "@/components/providers/LanguageProvider";
+import { prefersReducedMotion } from "@/lib/animations";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function AboutSection() {
+  const { aboutContent } = useContent();
   const statsRef = useRef<HTMLDivElement>(null);
 
   // Count-up animation for stats

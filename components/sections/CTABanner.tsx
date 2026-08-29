@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import Reveal from "@/components/ui/Reveal";
-import { ctaBannerContent } from "@/lib/content";
+import { useContent } from "@/components/providers/LanguageProvider";
 
 export default function CTABanner() {
+  const { ctaBannerContent } = useContent();
   return (
     <section className="relative py-20 md:py-28 overflow-hidden bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800">
       {/* Animated background layers */}

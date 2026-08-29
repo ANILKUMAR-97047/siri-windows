@@ -3,6 +3,7 @@ import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
+import LanguageProvider from "@/components/providers/LanguageProvider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FloatingButtons from "@/components/ui/FloatingButtons";
@@ -23,7 +24,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: `${siteMeta.name} — ${siteMeta.tagline}`,
+    default: `${siteMeta.name} - ${siteMeta.tagline}`,
     template: `%s | ${siteMeta.name}`,
   },
   description: siteMeta.description,
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: siteMeta.parentBrand }],
   openGraph: {
-    title: `${siteMeta.name} — ${siteMeta.tagline}`,
+    title: `${siteMeta.name} - ${siteMeta.tagline}`,
     description: siteMeta.description,
     url: siteMeta.url,
     siteName: siteMeta.name,
@@ -53,7 +54,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteMeta.name} — ${siteMeta.tagline}`,
+    title: `${siteMeta.name} - ${siteMeta.tagline}`,
     description: siteMeta.description,
   },
   robots: {
@@ -69,12 +70,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${playfair.variable} ${inter.variable} antialiased`}
     >
       <body className="min-h-screen flex flex-col">
-        <SmoothScrollProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <FloatingButtons />
-        </SmoothScrollProvider>
+        <LanguageProvider>
+          <SmoothScrollProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <FloatingButtons />
+          </SmoothScrollProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

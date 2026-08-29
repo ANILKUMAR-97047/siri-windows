@@ -1,17 +1,60 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Phone, Menu, X } from "lucide-react";
+import { Phone, Menu, X, Languages, ChevronDown } from "lucide-react";
 import Logo from "./Logo";
-import { navLinks, contactInfo } from "@/lib/content";
+import { useLanguage } from "@/components/providers/LanguageProvider";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+function LanguageSelect({ isScrolled = true }: { isScrolled?: boolean }) {
+  const { language, setLanguage, languages, content } = useLanguage();
+  const activeLanguage = languages.find((item) => item.code === language) ?? languages[0];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={`flex min-h-[40px] items-center gap-1.5 rounded-lg border px-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
+            isScrolled
+              ? "border-navy-900/15 bg-white text-navy-900 hover:bg-blue-100"
+              : "border-white/25 bg-white/10 text-white hover:bg-white/15"
+          }`}
+          aria-label={content.languageLabel}
+        >
+          <Languages className="h-4 w-4" />
+          <span className="hidden xs:inline">{activeLanguage.label}</span>
+          <span className="xs:hidden">{activeLanguage.shortLabel}</span>
+          <ChevronDown className="h-4 w-4 opacity-75" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-40">
+        <DropdownMenuRadioGroup value={language} onValueChange={(value) => setLanguage(value as typeof language)}>
+          {languages.map((item) => (
+            <DropdownMenuRadioItem key={item.code} value={item.code}>
+              {item.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export default function Navbar() {
+  const { content } = useLanguage();
+  const { navLinks, contactInfo, heroContent } = content;
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
 
-  // Scroll listener for navbar background transition
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -21,7 +64,6 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -59,20 +101,12 @@ export default function Navbar() {
           : "bg-transparent"
       }`}
     >
-      <nav className="container-wide flex items-center justify-between h-16 md:h-20">
-        {/* Logo */}
-        <Link
-          href="#home"
-          className={`transition-colors duration-300 ${
-            isScrolled ? "text-navy-950" : "text-white"
-          }`}
-          aria-label="Siri Enterprises - Home"
-        >
+      <nav className="container-wide flex h-16 items-center justify-between md:h-20">
+        <Link href="#home" aria-label="Siri Enterprises - Home">
           <Logo />
         </Link>
 
-        {/* Desktop Nav Links */}
-        <div className="hidden md:flex items-center gap-6 lg:gap-8">
+        <div className="hidden items-center gap-5 lg:gap-7 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -86,52 +120,51 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Desktop Right: Phone + CTA */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden items-center gap-3 md:flex">
+          <LanguageSelect isScrolled={isScrolled} />
           <a
             href={`tel:${contactInfo.phones[0]}`}
             className={`flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 ${
               isScrolled ? "text-navy-800" : "text-white/90"
             }`}
           >
-            <Phone className="w-4 h-4" />
-            <span className="hidden lg:inline">{contactInfo.phones[0]}</span>
+            <Phone className="h-4 w-4" />
+            <span className="hidden xl:inline">{contactInfo.phones[0]}</span>
           </a>
           <Link
             href="#contact"
-            className="inline-flex items-center px-5 py-2.5 text-sm font-semibold rounded-lg bg-navy-900 text-white hover:bg-navy-800 transition-all duration-200 hover:shadow-lg"
+            className="inline-flex min-h-[42px] items-center rounded-lg bg-navy-900 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-navy-800 hover:shadow-lg"
           >
-            Get Free Quote
+            {heroContent.ctaPrimary}
           </Link>
         </div>
 
-        {/* Mobile: Phone + Hamburger */}
-        <div className="flex md:hidden items-center gap-3">
+        <div className="flex items-center gap-2 md:hidden">
+          <LanguageSelect isScrolled={isScrolled} />
           <a
             href={`tel:${contactInfo.phones[0]}`}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`rounded-lg p-2 transition-colors ${
               isScrolled ? "text-navy-800" : "text-white"
             }`}
             aria-label="Call us"
           >
-            <Phone className="w-5 h-5" />
+            <Phone className="h-5 w-5" />
           </a>
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(true)}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`rounded-lg p-2 transition-colors ${
               isScrolled ? "text-navy-800" : "text-white"
             }`}
             aria-label="Open menu"
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-navigation"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="h-6 w-6" />
           </button>
         </div>
       </nav>
 
-      {/* Mobile Menu Drawer */}
       <div
         className={`fixed inset-0 z-[60] md:hidden ${
           isMobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"
@@ -157,12 +190,7 @@ export default function Navbar() {
           aria-label="Mobile navigation"
         >
           <div className="flex items-center justify-between">
-            <Link
-              href="#home"
-              onClick={handleNavClick}
-              className="text-white"
-              aria-label="Siri Enterprises Home"
-            >
+            <Link href="#home" onClick={handleNavClick} aria-label="Siri Enterprises Home">
               <Logo />
             </Link>
             <button
@@ -175,7 +203,11 @@ export default function Navbar() {
             </button>
           </div>
 
-          <div className="mt-10 flex flex-1 flex-col">
+          <div className="mt-8">
+            <LanguageSelect isScrolled={false} />
+          </div>
+
+          <div className="mt-8 flex flex-1 flex-col">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link
@@ -203,7 +235,7 @@ export default function Navbar() {
                 onClick={handleNavClick}
                 className="inline-flex min-h-[46px] items-center justify-center rounded-lg bg-gold-500 px-6 py-3 text-base font-semibold text-navy-950 transition-colors hover:bg-gold-400"
               >
-                Get Free Quote
+                {heroContent.ctaPrimary}
               </Link>
             </div>
           </div>

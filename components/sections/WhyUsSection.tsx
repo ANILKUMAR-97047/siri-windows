@@ -6,12 +6,13 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import * as LucideIcons from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
-import { whyUsContent } from "@/lib/content";
+import { useContent } from "@/components/providers/LanguageProvider";
 import { prefersReducedMotion, ANIM } from "@/lib/animations";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function WhyUsSection() {
+  const { whyUsContent } = useContent();
   const gridRef = useRef<HTMLDivElement>(null);
 
   useGSAP(

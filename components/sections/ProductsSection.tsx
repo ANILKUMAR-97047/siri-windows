@@ -7,12 +7,13 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import * as LucideIcons from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
-import { productsContent } from "@/lib/content";
+import { useContent } from "@/components/providers/LanguageProvider";
 import { prefersReducedMotion, ANIM } from "@/lib/animations";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function ProductsSection() {
+  const { productsContent } = useContent();
   const gridRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
@@ -90,7 +91,7 @@ export default function ProductsSection() {
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-950/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="absolute bottom-3 left-3 right-3 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
                     <span className="text-xs font-semibold text-white bg-gold-500/90 px-3 py-1.5 rounded-md">
-                      Learn More
+                      {productsContent.learnMore}
                     </span>
                   </div>
                 </div>

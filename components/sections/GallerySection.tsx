@@ -7,23 +7,25 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
-import { galleryContent } from "@/lib/content";
+import { useContent } from "@/components/providers/LanguageProvider";
 import { prefersReducedMotion, ANIM } from "@/lib/animations";
 
 gsap.registerPlugin(ScrollTrigger);
 
-type FilterType = (typeof galleryContent.filters)[number];
+type FilterType = "all" | "windows" | "doors";
+const filterValues: FilterType[] = ["all", "windows", "doors"];
 
 export default function GallerySection() {
-  const [activeFilter, setActiveFilter] = useState<FilterType>("All");
+  const { galleryContent } = useContent();
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
   const filteredImages =
-    activeFilter === "All"
+    activeFilter === "all"
       ? galleryContent.images
       : galleryContent.images.filter(
-        (img) => img.category === activeFilter.toLowerCase()
+        (img) => img.category === activeFilter
       );
 
   useGSAP(
@@ -51,6 +53,16 @@ export default function GallerySection() {
     { scope: gridRef, dependencies: [activeFilter] }
   );
 
+  const navigateLightbox = useCallback(
+    (dir: number) => {
+      if (lightboxIndex === null) return;
+      const newIndex =
+        (lightboxIndex + dir + filteredImages.length) % filteredImages.length;
+      setLightboxIndex(newIndex);
+    },
+    [lightboxIndex, filteredImages.length]
+  );
+
   // Lightbox keyboard navigation
   useEffect(() => {
     if (lightboxIndex === null) return;
@@ -69,16 +81,6 @@ export default function GallerySection() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lightboxIndex, filteredImages.length]);
-
-  const navigateLightbox = useCallback(
-    (dir: number) => {
-      if (lightboxIndex === null) return;
-      const newIndex =
-        (lightboxIndex + dir + filteredImages.length) % filteredImages.length;
-      setLightboxIndex(newIndex);
-    },
-    [lightboxIndex, filteredImages.length]
-  );
 
   return (
     <section id="gallery" className="section-padding bg-white">
@@ -101,16 +103,16 @@ export default function GallerySection() {
         {/* Filter Tabs */}
         <Reveal>
           <div className="flex items-center justify-center gap-2 mb-10">
-            {galleryContent.filters.map((filter) => (
+            {filterValues.map((filter, index) => (
               <button
-                key={filter}
+                key={galleryContent.filters[index]}
                 onClick={() => setActiveFilter(filter)}
                 className={`px-5 py-2 text-sm font-medium rounded-lg cursor-pointer transition-all duration-200 min-h-[44px] ${activeFilter === filter
                   ? "bg-navy-900 text-white shadow-lg"
                   : "bg-off-white text-slate-600 hover:bg-blue-100"
                   }`}
               >
-                {filter}
+                {galleryContent.filters[index]}
               </button>
             ))}
           </div>
@@ -156,7 +158,7 @@ export default function GallerySection() {
           className="lightbox-overlay"
           onClick={() => setLightboxIndex(null)}
           role="dialog"
-          aria-label="Image lightbox"
+          aria-label={galleryContent.lightboxLabel}
           aria-modal="true"
         >
           <div
@@ -177,7 +179,7 @@ export default function GallerySection() {
             <button
               onClick={() => setLightboxIndex(null)}
               className="absolute -top-12 right-0 text-white/80 hover:text-white p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Close lightbox"
+              aria-label={galleryContent.close}
             >
               <X className="w-6 h-6" />
             </button>
@@ -186,14 +188,14 @@ export default function GallerySection() {
             <button
               onClick={() => navigateLightbox(-1)}
               className="absolute left-2 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-navy-950/50 rounded-full p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Previous image"
+              aria-label={galleryContent.previous}
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <button
               onClick={() => navigateLightbox(1)}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-navy-950/50 rounded-full p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Next image"
+              aria-label={galleryContent.next}
             >
               <ChevronRight className="w-6 h-6" />
             </button>

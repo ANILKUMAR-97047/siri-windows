@@ -6,7 +6,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { Award, Shield, Zap, ChevronDown } from "lucide-react";
-import { heroContent } from "@/lib/content";
+import { useContent } from "@/components/providers/LanguageProvider";
 import { prefersReducedMotion } from "@/lib/animations";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -18,6 +18,7 @@ const badgeIcons: Record<string, React.ReactNode> = {
 };
 
 export default function HeroSection() {
+  const { heroContent } = useContent();
   const sectionRef = useRef<HTMLElement>(null);
   const bgRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);

@@ -6,12 +6,13 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import * as LucideIcons from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
-import { processContent } from "@/lib/content";
+import { useContent } from "@/components/providers/LanguageProvider";
 import { prefersReducedMotion } from "@/lib/animations";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function ProcessSection() {
+  const { processContent } = useContent();
   const sectionRef = useRef<HTMLElement>(null);
   const lineRef = useRef<HTMLDivElement>(null);
 

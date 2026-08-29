@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { Phone, MapPin, Clock, Mail, Send, CheckCircle, Loader2 } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
-import { contactFormContent, contactInfo } from "@/lib/content";
+import { useContent } from "@/components/providers/LanguageProvider";
 
 interface FormData {
   name: string;
@@ -16,6 +16,7 @@ interface FormData {
 type FormStatus = "idle" | "submitting" | "success" | "error";
 
 export default function ContactSection() {
+  const { contactFormContent, contactInfo, contactLabels } = useContent();
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
@@ -30,16 +31,16 @@ export default function ContactSection() {
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
 
-    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.name.trim()) newErrors.name = contactLabels.requiredName;
     if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
+      newErrors.phone = contactLabels.requiredPhone;
     } else if (!/^[0-9]{10}$/.test(formData.phone.replace(/\s/g, ""))) {
-      newErrors.phone = "Enter a valid 10-digit phone number";
+      newErrors.phone = contactLabels.invalidPhone;
     }
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Enter a valid email address";
+      newErrors.email = contactLabels.invalidEmail;
     }
-    if (!formData.message.trim()) newErrors.message = "Message is required";
+    if (!formData.message.trim()) newErrors.message = contactLabels.requiredMessage;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -118,7 +119,7 @@ export default function ContactSection() {
                   required
                   className={errors.name ? "!border-red-400" : ""}
                 />
-                <label htmlFor="contact-name">Full Name *</label>
+                <label htmlFor="contact-name">{contactLabels.name}</label>
                 {errors.name && (
                   <p className="text-red-500 text-xs mt-1">{errors.name}</p>
                 )}
@@ -136,7 +137,7 @@ export default function ContactSection() {
                   required
                   className={errors.phone ? "!border-red-400" : ""}
                 />
-                <label htmlFor="contact-phone">Phone Number *</label>
+                <label htmlFor="contact-phone">{contactLabels.phone}</label>
                 {errors.phone && (
                   <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
                 )}
@@ -153,7 +154,7 @@ export default function ContactSection() {
                   placeholder=" "
                   className={errors.email ? "!border-red-400" : ""}
                 />
-                <label htmlFor="contact-email">Email (Optional)</label>
+                <label htmlFor="contact-email">{contactLabels.email}</label>
                 {errors.email && (
                   <p className="text-red-500 text-xs mt-1">{errors.email}</p>
                 )}
@@ -168,14 +169,14 @@ export default function ContactSection() {
                   onChange={handleChange}
                   className="appearance-none"
                 >
-                  <option value="">Select a product</option>
+                  <option value="">{contactLabels.productPlaceholder}</option>
                   {contactFormContent.productOptions.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
                     </option>
                   ))}
                 </select>
-                <label htmlFor="contact-product">Product Interest</label>
+                <label htmlFor="contact-product">{contactLabels.product}</label>
               </div>
 
               {/* Message */}
@@ -190,7 +191,7 @@ export default function ContactSection() {
                   required
                   className={`resize-none ${errors.message ? "!border-red-400" : ""}`}
                 />
-                <label htmlFor="contact-message">Your Message / Requirements *</label>
+                <label htmlFor="contact-message">{contactLabels.message}</label>
                 {errors.message && (
                   <p className="text-red-500 text-xs mt-1">{errors.message}</p>
                 )}
@@ -205,24 +206,24 @@ export default function ContactSection() {
                 {status === "submitting" ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Sending...
+                    {contactLabels.sending}
                   </>
                 ) : status === "success" ? (
                   <>
                     <CheckCircle className="w-5 h-5" />
-                    Sent Successfully!
+                    {contactLabels.success}
                   </>
                 ) : (
                   <>
                     <Send className="w-5 h-5" />
-                    Send Message
+                    {contactLabels.submit}
                   </>
                 )}
               </button>
 
               {status === "error" && (
                 <p className="text-red-500 text-sm text-center">
-                  Something went wrong. Please try again or call us directly.
+                  {contactLabels.error}
                 </p>
               )}
             </form>
@@ -238,7 +239,7 @@ export default function ContactSection() {
                   fontFamily: "var(--font-heading)",
                 }}
               >
-                Get in Touch
+                {contactLabels.getInTouch}
               </h3>
 
               <div className="space-y-6">
@@ -249,7 +250,7 @@ export default function ContactSection() {
                   </div>
                   <div>
                     <p className="font-medium text-navy-950 text-sm mb-0.5">
-                      Visit Our Showroom
+                      {contactLabels.showroom}
                     </p>
                     <p className="text-slate-600 text-sm leading-relaxed">
                       {contactInfo.address}
@@ -264,7 +265,7 @@ export default function ContactSection() {
                   </div>
                   <div>
                     <p className="font-medium text-navy-950 text-sm mb-0.5">
-                      Call Us
+                      {contactLabels.call}
                     </p>
                     {contactInfo.phones.map((phone) => (
                       <a
@@ -285,7 +286,7 @@ export default function ContactSection() {
                   </div>
                   <div>
                     <p className="font-medium text-navy-950 text-sm mb-0.5">
-                      Business Hours
+                      {contactLabels.hours}
                     </p>
                     <p className="text-slate-600 text-sm">
                       {contactInfo.businessHours}

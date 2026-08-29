@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ArrowUp } from "lucide-react";
-import { contactInfo } from "@/lib/content";
-
-const WHATSAPP_MESSAGE =
-  "Hi Siri Windows, I'm interested in UPVC/Aluminium windows and doors. Please share more details.";
+import { useContent } from "@/components/providers/LanguageProvider";
 
 function WhatsAppIcon() {
   return (
@@ -29,6 +26,7 @@ function WhatsAppIcon() {
 }
 
 export default function FloatingButtons() {
+  const { contactInfo, whatsappMessage } = useContent();
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -46,7 +44,7 @@ export default function FloatingButtons() {
   };
 
   const whatsappUrl = `https://wa.me/${contactInfo.whatsappNumber}?text=${encodeURIComponent(
-    WHATSAPP_MESSAGE
+    whatsappMessage
   )}`;
 
   return (
