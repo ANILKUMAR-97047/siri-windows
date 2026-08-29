@@ -98,10 +98,10 @@ export default function Footer() {
                 <Mail className="w-4 h-4 text-gold-500 shrink-0" />
                 {/* TODO: replace with real email */}
                 <a
-                  href="mailto:info@siriwindows.in"
+                  href="mailto:sirienterprises8003@gmail.com"
                   className="text-sm text-white/60 hover:text-white transition-colors"
                 >
-                  info@siriwindows.in
+                  sirienterprises8003@gmail.com
                 </a>
               </li>
             </ul>

@@ -54,6 +54,7 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+  const lockedScrollYRef = useRef(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -65,13 +66,32 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (!isMobileMenuOpen) return;
+
+    const body = document.body;
+    const html = document.documentElement;
+    const scrollY = window.scrollY;
+    lockedScrollYRef.current = scrollY;
+
+    html.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    body.style.touchAction = "none";
+
     return () => {
-      document.body.style.overflow = "";
+      html.style.overflow = "";
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      body.style.overflow = "";
+      body.style.touchAction = "";
+      window.scrollTo(0, lockedScrollYRef.current);
     };
   }, [isMobileMenuOpen]);
 
@@ -175,17 +195,18 @@ export default function Navbar() {
           type="button"
           aria-label="Close menu"
           onClick={() => setIsMobileMenuOpen(false)}
-          className={`absolute inset-0 bg-navy-950/55 backdrop-blur-sm transition-opacity duration-300 ease-out ${
+          className={`absolute inset-0 bg-navy-950/70 backdrop-blur-md transition-opacity duration-300 ease-out ${
             isMobileMenuOpen ? "opacity-100" : "opacity-0"
           }`}
         />
 
         <aside
           id="mobile-navigation"
-          className={`absolute right-0 top-0 flex h-dvh w-[min(86vw,22rem)] flex-col bg-navy-950 px-6 py-5 text-white shadow-2xl transition-transform duration-300 ease-out ${
+          className={`absolute right-0 top-0 flex h-dvh w-[min(86vw,22rem)] flex-col overflow-y-auto bg-navy-950 px-6 py-5 text-white shadow-2xl overscroll-contain transition-transform duration-300 ease-out ${
             isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
           }`}
           role="dialog"
+          data-lenis-prevent
           aria-modal="true"
           aria-label="Mobile navigation"
         >
@@ -209,13 +230,22 @@ export default function Navbar() {
 
           <div className="mt-8 flex flex-1 flex-col">
             <div className="flex flex-col gap-2">
-              {navLinks.map((link) => (
+              {navLinks.map((link, index) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={handleNavClick}
-                  className="flex min-h-[48px] items-center border-b border-white/10 text-xl font-medium text-white/90 transition-colors hover:text-gold-400"
-                  style={{ fontFamily: "var(--font-heading)" }}
+                  className={`flex min-h-[48px] items-center border-b border-white/10 text-xl font-medium text-white/90 transition-all duration-300 ease-out hover:text-gold-400 ${
+                    isMobileMenuOpen
+                      ? "translate-x-0 opacity-100"
+                      : "translate-x-6 opacity-0"
+                  }`}
+                  style={{
+                    fontFamily: "var(--font-heading)",
+                    transitionDelay: isMobileMenuOpen
+                      ? `${120 + index * 55}ms`
+                      : "0ms",
+                  }}
                 >
                   {link.label}
                 </Link>

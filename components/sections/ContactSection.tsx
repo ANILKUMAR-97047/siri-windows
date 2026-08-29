@@ -305,10 +305,10 @@ export default function ContactSection() {
                     </p>
                     {/* TODO: replace with real email */}
                     <a
-                      href="mailto:info@siriwindows.in"
+                      href="mailto:sirienterprises8003@gmail.com"
                       className="text-slate-600 text-sm hover:text-navy-600 transition-colors"
                     >
-                      info@siriwindows.in
+                      sirienterprises8003@gmail.com
                     </a>
                   </div>
                 </div>
