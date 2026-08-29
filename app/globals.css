@@ -1,26 +1,270 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================================
+   Siri Windows â€” Design System (Tailwind CSS v4)
+   ============================================================ */
+
+@theme {
+  /* ---- Breakpoints ---- */
+  --breakpoint-xs: 370px;
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* ---- Brand Colors ---- */
+  --color-navy-950: #0a1628;
+  --color-navy-900: #0f2544;
+  --color-navy-800: #16325c;
+  --color-navy-700: #1e3f6e;
+  --color-navy-600: #2a4d80;
+  --color-blue-400: #7fb3e8;
+  --color-blue-300: #a5ccf0;
+  --color-blue-200: #cfe4f7;
+  --color-blue-100: #e8f1fb;
+  --color-off-white: #f7f9fc;
+  --color-gold-500: #c9a24b;
+  --color-gold-400: #d4b56a;
+  --color-gold-300: #e0c98a;
+  --color-slate-700: #3d4759;
+  --color-slate-600: #54607a;
+  --color-slate-500: #6b7a96;
+  --color-slate-400: #94a3b8;
+
+  /* ---- Font Families ---- */
+  --font-heading: var(--font-playfair), "Georgia", serif;
+  --font-body: var(--font-inter), "Helvetica Neue", sans-serif;
+
+  /* ---- Fluid Type Scale (clamp-based) ---- */
+  --text-hero: clamp(2.5rem, 5vw + 1rem, 5rem);
+  --text-h1: clamp(2rem, 3.5vw + 0.5rem, 3.5rem);
+  --text-h2: clamp(1.5rem, 2.5vw + 0.5rem, 2.5rem);
+  --text-h3: clamp(1.25rem, 1.5vw + 0.5rem, 1.75rem);
+  --text-h4: clamp(1.1rem, 1vw + 0.5rem, 1.35rem);
+  --text-body: clamp(0.938rem, 0.5vw + 0.75rem, 1.125rem);
+  --text-small: clamp(0.813rem, 0.25vw + 0.7rem, 0.875rem);
+
+  /* ---- Shadows ---- */
+  --shadow-glass: 0 8px 32px rgba(10, 22, 40, 0.08);
+  --shadow-card: 0 4px 20px rgba(10, 22, 40, 0.06);
+  --shadow-card-hover: 0 12px 40px rgba(10, 22, 40, 0.12);
+  --shadow-nav: 0 2px 16px rgba(10, 22, 40, 0.08);
+
+  /* ---- Border Radius ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ---- Global Base Styles ---- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Lenis smooth scroll */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  color: var(--color-slate-700);
+  background: #ffffff;
+  line-height: 1.65;
+  overflow-x: hidden;
+}
+
+/* ---- Typography ---- */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--color-navy-950);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+/* ---- Selection ---- */
+::selection {
+  background: var(--color-blue-200);
+  color: var(--color-navy-950);
+}
+
+/* ---- Focus Styles ---- */
+:focus-visible {
+  outline: 2px solid var(--color-blue-400);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-off-white);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-slate-400);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-navy-600);
+}
+
+/* ---- Section Spacing ---- */
+.section-padding {
+  padding-block: clamp(3rem, 8vw, 7rem);
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+
+/* ---- Container ---- */
+.container-wide {
+  width: 90%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 0;
+}
+
+/* ---- Window Pane Motif (background pattern) ---- */
+.window-pane-pattern {
+  background-image:
+    linear-gradient(var(--color-blue-400) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-blue-400) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.04;
+}
+
+/* ---- Gold Accent Underline ---- */
+.accent-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.accent-underline::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: var(--color-gold-500);
+  border-radius: 2px;
+}
+
+/* ---- Section Label (small caps above heading) ---- */
+.section-label {
+  font-family: var(--font-body);
+  font-size: var(--text-small);
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-gold-500);
+  margin-bottom: 0.75rem;
+}
+
+/* ---- Reduced Motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Lightbox overlay ---- */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 22, 40, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+/* ---- Floating label input styles ---- */
+.floating-label-group {
+  position: relative;
+}
+
+.floating-label-group input,
+.floating-label-group textarea,
+.floating-label-group select {
+  width: 100%;
+  padding: 1rem 1rem 0.5rem;
+  font-size: var(--text-body);
+  font-family: var(--font-body);
+  background: var(--color-off-white);
+  border: 1.5px solid var(--color-blue-200);
+  border-radius: var(--radius-md);
+  color: var(--color-navy-950);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 44px;
+}
+
+.floating-label-group input:focus,
+.floating-label-group textarea:focus,
+.floating-label-group select:focus {
+  border-color: var(--color-navy-600);
+  box-shadow: 0 0 0 3px rgba(42, 77, 128, 0.1);
+  outline: none;
+}
+
+.floating-label-group label {
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  transform: translateY(-50%);
+  font-size: var(--text-body);
+  color: var(--color-slate-500);
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.floating-label-group textarea ~ label {
+  top: 1rem;
+  transform: none;
+}
+
+.floating-label-group input:focus ~ label,
+.floating-label-group input:not(:placeholder-shown) ~ label,
+.floating-label-group textarea:focus ~ label,
+.floating-label-group textarea:not(:placeholder-shown) ~ label,
+.floating-label-group select:focus ~ label,
+.floating-label-group select:valid ~ label {
+  top: 0.35rem;
+  transform: none;
+  font-size: var(--text-small);
+  color: var(--color-navy-600);
+  font-weight: 500;
 }
