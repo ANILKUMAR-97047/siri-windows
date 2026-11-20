@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
-
-import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
-import LanguageProvider from "@/components/providers/LanguageProvider";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import FloatingButtons from "@/components/ui/FloatingButtons";
 import { siteMeta } from "@/lib/content";
 
 const playfair = Playfair_Display({
@@ -63,21 +57,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"
       className={`${playfair.variable} ${inter.variable} antialiased`}
     >
-      <body className="min-h-screen flex flex-col">
-        <LanguageProvider>
-          <SmoothScrollProvider>
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-            <FloatingButtons />
-          </SmoothScrollProvider>
-        </LanguageProvider>
+      <body className="min-h-screen flex flex-col bg-background text-foreground">
+        {children}
       </body>
     </html>
   );

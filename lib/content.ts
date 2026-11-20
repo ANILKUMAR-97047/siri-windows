@@ -62,6 +62,7 @@ export interface ContactInfo {
 export interface ContactLabels {
   name: string;
   phone: string;
+  location: string;
   email: string;
   product: string;
   productPlaceholder: string;
@@ -78,6 +79,7 @@ export interface ContactLabels {
   mapTitle: string;
   requiredName: string;
   requiredPhone: string;
+  requiredLocation: string;
   invalidPhone: string;
   invalidEmail: string;
   requiredMessage: string;
@@ -286,6 +288,7 @@ const englishContent = {
   contactLabels: {
     name: "Full Name *",
     phone: "Phone Number *",
+    location: "Location / City *",
     email: "Email (Optional)",
     product: "Product Interest",
     productPlaceholder: "Select a product",
@@ -302,6 +305,7 @@ const englishContent = {
     mapTitle: "Siri Enterprises location - Tanuku, Andhra Pradesh",
     requiredName: "Name is required",
     requiredPhone: "Phone number is required",
+    requiredLocation: "Location / City is required",
     invalidPhone: "Enter a valid 10-digit phone number",
     invalidEmail: "Enter a valid email address",
     requiredMessage: "Message is required",
@@ -333,7 +337,7 @@ const teluguContent: WebsiteContent = {
   testimonialsContent: { ...testimonialsContent, sectionLabel: "కస్టమర్ అభిప్రాయాలు", heading: "మా కస్టమర్లు ఏమంటున్నారు", testimonials: testimonialsContent.testimonials.map((item, index) => ({ ...item, quote: ["సిరి ఎంటర్‌ప్రైజెస్ మా ఇంటిని UPVC కిటికీలతో అందంగా మార్చింది. శబ్దం చాలా తగ్గింది, సేవ కూడా చాలా బాగుంది.", "మా కొత్త ఇంటికి సిరి విండోస్ ఎంచుకున్నాము. అల్యూమినియం స్లైడింగ్ తలుపులు చాలా అందంగా ఉన్నాయి.", "ప్రారంభం నుండి ముగింపు వరకు ప్రొఫెషనల్ సర్వీస్. కొలతలు ఖచ్చితంగా తీసుకుని కిటికీలు బాగా అమర్చారు.", "అద్భుతమైన పనితనం మరియు మన్నికైన ఉత్పత్తులు. ఫ్రెంచ్ తలుపుల వల్ల మా లివింగ్ రూమ్‌లో సహజ కాంతి పెరిగింది.", "సిరి ఎంటర్‌ప్రైజెస్ మంచి నాణ్యతను సరైన ధరలో ఇచ్చింది. UPVC తలుపులు బలంగా మరియు ప్రీమియంగా ఉన్నాయి."][index] })) },
   ctaBannerContent: { heading: "మీ వీక్షణను అప్‌గ్రేడ్ చేయడానికి సిద్ధమా?", subheading: "మీ ఇల్లు లేదా కమర్షియల్ ప్రాజెక్ట్ కోసం ఉచిత కోట్ పొందండి. మా నిపుణులు సరైన సొల్యూషన్‌ను సూచిస్తారు.", cta: "మీ ఉచిత కోట్ పొందండి" },
   contactFormContent: { sectionLabel: "సంప్రదించండి", heading: "మీ ప్రాజెక్ట్‌ను ప్రారంభిద్దాం", productOptions: ["UPVC కిటికీలు", "అల్యూమినియం కిటికీలు", "UPVC తలుపులు", "అల్యూమినియం తలుపులు", "స్లైడింగ్ కిటికీలు & తలుపులు", "కేస్మెంట్ కిటికీలు", "ఫ్రెంచ్ తలుపులు", "కస్టమ్ సొల్యూషన్", "ఇతర / తెలియదు"] },
-  contactLabels: { name: "పూర్తి పేరు *", phone: "ఫోన్ నంబర్ *", email: "ఇమెయిల్ (ఐచ్చికం)", product: "ఉత్పత్తి ఆసక్తి", productPlaceholder: "ఉత్పత్తిని ఎంచుకోండి", message: "మీ సందేశం / అవసరాలు *", sending: "పంపుతోంది...", success: "విజయవంతంగా పంపబడింది!", submit: "సందేశం పంపండి", error: "ఏదో తప్పు జరిగింది. దయచేసి మళ్లీ ప్రయత్నించండి లేదా నేరుగా కాల్ చేయండి.", getInTouch: "సంప్రదించండి", showroom: "మా షోరూమ్‌కు రండి", call: "మాకు కాల్ చేయండి", hours: "పని సమయాలు", emailTitle: "ఇమెయిల్", mapTitle: "సిరి ఎంటర్‌ప్రైజెస్ స్థానం - తనుకు, ఆంధ్రప్రదేశ్", requiredName: "పేరు అవసరం", requiredPhone: "ఫోన్ నంబర్ అవసరం", invalidPhone: "చెల్లుబాటు అయ్యే 10 అంకెల ఫోన్ నంబర్ ఇవ్వండి", invalidEmail: "చెల్లుబాటు అయ్యే ఇమెయిల్ ఇవ్వండి", requiredMessage: "సందేశం అవసరం" },
+  contactLabels: { name: "పూర్తి పేరు *", phone: "ఫోన్ నంబర్ *", location: "ప్రాంతం / నగరం *", email: "ఇమెయిల్ (ఐచ్చికం)", product: "ఉత్పత్తి ఆసక్తి", productPlaceholder: "ఉత్పత్తిని ఎంచుకోండి", message: "మీ సందేశం / అవసరాలు *", sending: "పంపుతోంది...", success: "విజయవంతంగా పంపబడింది!", submit: "సందేశం పంపండి", error: "ఏదో తప్పు జరిగింది. దయచేసి మళ్లీ ప్రయత్నించండి లేదా నేరుగా కాల్ చేయండి.", getInTouch: "సంప్రదించండి", showroom: "మా షోరూమ్‌కు రండి", call: "మాకు కాల్ చేయండి", hours: "పని సమయాలు", emailTitle: "ఇమెయిల్", mapTitle: "సిరి ఎంటర్‌ప్రైజెస్ స్థానం - తనుకు, ఆంధ్రప్రదేశ్", requiredName: "పేరు అవసరం", requiredPhone: "ఫోన్ నంబర్ అవసరం", requiredLocation: "ప్రాంతం / నగరం అవసరం", invalidPhone: "చెల్లుబాటు అయ్యే 10 అంకెల ఫోన్ నంబర్ ఇవ్వండి", invalidEmail: "చెల్లుబాటు అయ్యే ఇమెయిల్ ఇవ్వండి", requiredMessage: "సందేశం అవసరం" },
   footerContent: { description: "అందం కోసం డిజైన్ చేయబడిన, మన్నిక కోసం నిర్మించబడిన ప్రీమియం UPVC & అల్యూమినియం కిటికీలు మరియు తలుపులు. వెస్ట్ గోదావరి మరియు పరిసర ప్రాంతాల్లో సేవలు.", quickLinks: "త్వరిత లింకులు", products: "ఉత్పత్తులు", contact: "సంప్రదించండి", rights: "అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి." },
   whatsappMessage: "హాయ్ సిరి విండోస్, UPVC/అల్యూమినియం కిటికీలు మరియు తలుపుల గురించి మరిన్ని వివరాలు కావాలి.",
   languageLabel: "భాష",
@@ -355,7 +359,7 @@ const hindiContent: WebsiteContent = {
   testimonialsContent: { ...testimonialsContent, sectionLabel: "प्रशंसापत्र", heading: "हमारे ग्राहक क्या कहते हैं", testimonials: testimonialsContent.testimonials.map((item, index) => ({ ...item, quote: ["सिरी एंटरप्राइजेज़ ने हमारे घर को UPVC विंडोज़ से बदल दिया। शोर काफी कम हुआ और सेवा बहुत अच्छी रही.", "नई कंस्ट्रक्शन के लिए हमने सिरी विंडोज़ चुना। एल्युमिनियम स्लाइडिंग डोर्स सुंदर हैं और इंस्टॉलेशन बेहतरीन था.", "शुरू से अंत तक प्रोफेशनल सर्विस। टीम ने सही माप लिया और विंडोज़ बिल्कुल फिट हुईं.", "बेहतरीन कारीगरी और टिकाऊ उत्पाद। फ्रेंच डोर्स से हमारे लिविंग रूम में बहुत प्राकृतिक रोशनी आती है.", "सिरी एंटरप्राइजेज़ ने सही कीमत पर अच्छी क्वालिटी दी। UPVC डोर्स मजबूत और प्रीमियम दिखते हैं."][index] })) },
   ctaBannerContent: { heading: "अपना व्यू अपग्रेड करने के लिए तैयार हैं?", subheading: "अपने घर या कमर्शियल प्रोजेक्ट के लिए मुफ्त कोट पाएं। हमारे विशेषज्ञ सही समाधान चुनने में मदद करेंगे.", cta: "अपना मुफ्त कोट पाएं" },
   contactFormContent: { sectionLabel: "संपर्क करें", heading: "अपना प्रोजेक्ट शुरू करें", productOptions: ["UPVC विंडोज़", "एल्युमिनियम विंडोज़", "UPVC डोर्स", "एल्युमिनियम डोर्स", "स्लाइडिंग विंडोज़ और डोर्स", "केसमेंट विंडोज़", "फ्रेंच डोर्स", "कस्टम समाधान", "अन्य / निश्चित नहीं"] },
-  contactLabels: { name: "पूरा नाम *", phone: "फोन नंबर *", email: "ईमेल (वैकल्पिक)", product: "उत्पाद रुचि", productPlaceholder: "उत्पाद चुनें", message: "आपका संदेश / जरूरतें *", sending: "भेजा जा रहा है...", success: "सफलतापूर्वक भेजा गया!", submit: "संदेश भेजें", error: "कुछ गलत हुआ। कृपया फिर कोशिश करें या हमें सीधे कॉल करें.", getInTouch: "संपर्क में रहें", showroom: "हमारे शोरूम आएं", call: "हमें कॉल करें", hours: "व्यावसायिक समय", emailTitle: "ईमेल", mapTitle: "सिरी एंटरप्राइजेज़ लोकेशन - तनुकु, आंध्र प्रदेश", requiredName: "नाम जरूरी है", requiredPhone: "फोन नंबर जरूरी है", invalidPhone: "मान्य 10 अंकों का फोन नंबर दर्ज करें", invalidEmail: "मान्य ईमेल पता दर्ज करें", requiredMessage: "संदेश जरूरी है" },
+  contactLabels: { name: "पूरा नाम *", phone: "फोन नंबर *", location: "स्थान / शहर *", email: "ईमेल (वैकल्पिक)", product: "उत्पाद रुचि", productPlaceholder: "उत्पाद चुनें", message: "आपका संदेश / जरूरतें *", sending: "भेजा जा रहा है...", success: "सफलतापूर्वक भेजा गया!", submit: "संदेश भेजें", error: "कुछ गलत हुआ। कृपया फिर कोशिश करें या हमें सीधे कॉल करें.", getInTouch: "संपर्क में रहें", showroom: "हमारे शोरूम आएं", call: "हमें कॉल करें", hours: "व्यावसायिक समय", emailTitle: "ईमेल", mapTitle: "सिरी एंटरप्राइजेज़ लोकेशन - तनुकु, आंध्र प्रदेश", requiredName: "नाम जरूरी है", requiredPhone: "फोन नंबर जरूरी है", requiredLocation: "स्थान / शहर जरूरी है", invalidPhone: "मान्य 10 अंकों का फोन नंबर दर्ज करें", invalidEmail: "मान्य ईमेल पता दर्ज करें", requiredMessage: "संदेश जरूरी है" },
   footerContent: { description: "सुंदरता के लिए डिज़ाइन और टिकाऊपन के लिए निर्मित प्रीमियम UPVC व एल्युमिनियम विंडोज़ और डोर्स। वेस्ट गोदावरी और आसपास सेवा.", quickLinks: "क्विक लिंक्स", products: "उत्पाद", contact: "संपर्क करें", rights: "सर्वाधिकार सुरक्षित." },
   whatsappMessage: "हाय सिरी विंडोज़, मुझे UPVC/एल्युमिनियम विंडोज़ और डोर्स के बारे में जानकारी चाहिए.",
   languageLabel: "भाषा",

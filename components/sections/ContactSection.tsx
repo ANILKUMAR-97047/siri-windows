@@ -8,6 +8,7 @@ import { useContent } from "@/components/providers/LanguageProvider";
 interface FormData {
   name: string;
   phone: string;
+  location: string;
   email: string;
   product: string;
   message: string;
@@ -20,6 +21,7 @@ export default function ContactSection() {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     phone: "",
+    location: "",
     email: "",
     product: "",
     message: "",
@@ -36,6 +38,9 @@ export default function ContactSection() {
       newErrors.phone = contactLabels.requiredPhone;
     } else if (!/^[0-9]{10}$/.test(formData.phone.replace(/\s/g, ""))) {
       newErrors.phone = contactLabels.invalidPhone;
+    }
+    if (!formData.location.trim()) {
+      newErrors.location = contactLabels.requiredLocation;
     }
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = contactLabels.invalidEmail;
@@ -61,7 +66,7 @@ export default function ContactSection() {
 
       if (res.ok) {
         setStatus("success");
-        setFormData({ name: "", phone: "", email: "", product: "", message: "" });
+        setFormData({ name: "", phone: "", location: "", email: "", product: "", message: "" });
       } else {
         setStatus("error");
       }
@@ -140,6 +145,24 @@ export default function ContactSection() {
                 <label htmlFor="contact-phone">{contactLabels.phone}</label>
                 {errors.phone && (
                   <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+                )}
+              </div>
+
+              {/* Location / City */}
+              <div className="floating-label-group">
+                <input
+                  type="text"
+                  name="location"
+                  id="contact-location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder=" "
+                  required
+                  className={errors.location ? "!border-red-400" : ""}
+                />
+                <label htmlFor="contact-location">{contactLabels.location}</label>
+                {errors.location && (
+                  <p className="text-red-500 text-xs mt-1">{errors.location}</p>
                 )}
               </div>
 

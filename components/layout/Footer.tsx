@@ -27,7 +27,7 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* {footerContent.quickLinks} */}
+          {/* Quick Links */}
           <div>
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
               {footerContent.quickLinks}
@@ -46,7 +46,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* {footerContent.products} */}
+          {/* Products */}
           <div>
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
               {footerContent.products}
@@ -96,7 +96,6 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-gold-500 shrink-0" />
-                {/* TODO: replace with real email */}
                 <a
                   href="mailto:sirienterprises8003@gmail.com"
                   className="text-sm text-white/60 hover:text-white transition-colors"
@@ -113,17 +112,26 @@ export default function Footer() {
           <p>
             © {currentYear} {siteMeta.parentBrand}. {footerContent.rights}
           </p>
-          <p className="text-sm font-medium text-white/50">
-            Designed &amp; Developed by{" "}
-            <a
-              // href="https://anil-portfolio-dev.vercel.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gold-500 hover:text-gold-400 transition-colors underline"
+          <div className="flex items-center gap-4 text-sm font-medium text-white/50">
+            <Link
+              href="/admin"
+              className="text-white/40 hover:text-gold-400 transition-colors text-xs"
             >
-              Anil Kumar
-            </a>
-          </p>
+              Admin Portal
+            </Link>
+            <span>•</span>
+            <p>
+              Designed &amp; Developed by{" "}
+              <a
+                href="https://anil-portfolio-dev.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gold-500 hover:text-gold-400 transition-colors underline"
+              >
+                Anil Kumar
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
