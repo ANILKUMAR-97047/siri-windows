@@ -21,7 +21,7 @@ import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
 import { ALL_PERMISSIONS, PermissionKey, AdminUser } from "@/lib/auth-types";
 
 export default function AdminUsersPage() {
-  const { user: currentSuperAdmin } = useAdminAuth();
+  const { user: currentSuperAdmin, refreshUser } = useAdminAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -185,9 +185,13 @@ export default function AdminUsersPage() {
         return;
       }
 
-      alert("Admin permissions updated successfully!");
+      alert("Admin profile & permissions updated successfully!");
+      const isSelf = editingUser.id === currentSuperAdmin?.id;
       setEditingUser(null);
-      fetchUsers();
+      await fetchUsers();
+      if (isSelf) {
+        await refreshUser();
+      }
     } catch (err: unknown) {
       const error = err as Error;
       alert("Error: " + (error?.message || "Failed to update admin."));
@@ -274,25 +278,25 @@ export default function AdminUsersPage() {
 
           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Super Admins
+              Super Admin
             </div>
             <div className="text-2xl font-bold text-amber-500 mt-1">
-              {superAdminsCount}
+              1
             </div>
             <div className="text-[11px] text-slate-400 mt-1">
-              Full system ownership & permissions
+              System Owner & Master Access
             </div>
           </div>
 
           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Restricted Admins
+              Team Admins
             </div>
             <div className="text-2xl font-bold text-blue-500 mt-1">
-              {restrictedAdminsCount}
+              {users.filter((u) => u.role === "admin").length}
             </div>
             <div className="text-[11px] text-slate-400 mt-1">
-              Restricted to permitted modules only
+              Assigned custom module permissions
             </div>
           </div>
         </div>
@@ -502,80 +506,69 @@ export default function AdminUsersPage() {
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">
-                    Account Role
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
-                  >
-                    <option value="admin">Restricted Admin (Custom Permissions)</option>
-                    <option value="super_admin">Super Admin (Unrestricted Full Access)</option>
-                  </select>
-                </div>
-
-                {/* Module Permissions Checkbox Grid (shown only if role is admin) */}
-                {formData.role === "admin" && (
-                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center justify-between">
+                {/* Module Permissions Checkbox Grid */}
+                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <div>
                       <label className="font-bold text-slate-700 dark:text-slate-300">
                         Granted Module Permissions
                       </label>
-                      <div className="flex items-center gap-2 text-[11px]">
-                        <button
-                          type="button"
-                          onClick={selectAllAddPermissions}
-                          className="text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
-                        >
-                          Select All
-                        </button>
-                        <span>•</span>
-                        <button
-                          type="button"
-                          onClick={clearAllAddPermissions}
-                          className="text-slate-400 hover:underline cursor-pointer"
-                        >
-                          Clear All
-                        </button>
-                      </div>
+                      <p className="text-[10px] text-slate-400">
+                        Select which operational sections this admin can access
+                      </p>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
-                      {ALL_PERMISSIONS.map((perm) => {
-                        const checked = formData.permissions.includes(perm.key);
-                        return (
-                          <div
-                            key={perm.key}
-                            onClick={() => toggleAddPermission(perm.key)}
-                            className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition select-none ${
-                              checked
-                                ? "bg-amber-500/10 border-amber-500/40 text-slate-900 dark:text-white"
-                                : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-500"
-                            }`}
-                          >
-                            <div>
-                              <div className="font-semibold text-xs">{perm.label}</div>
-                              <div className="text-[10px] text-slate-400 line-clamp-1">
-                                {perm.description}
-                              </div>
-                            </div>
-                            <div
-                              className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ml-2 ${
-                                checked
-                                  ? "bg-amber-500 border-amber-500 text-slate-950 font-bold"
-                                  : "border-slate-300 dark:border-slate-600"
-                              }`}
-                            >
-                              {checked && <Check className="w-3 h-3 stroke-[3]" />}
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div className="flex items-center gap-2 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={selectAllAddPermissions}
+                        className="text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                      >
+                        Select All
+                      </button>
+                      <span>•</span>
+                      <button
+                        type="button"
+                        onClick={clearAllAddPermissions}
+                        className="text-slate-400 hover:underline cursor-pointer"
+                      >
+                        Clear All
+                      </button>
                     </div>
                   </div>
-                )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
+                    {ALL_PERMISSIONS.map((perm) => {
+                      const checked = formData.permissions.includes(perm.key);
+                      return (
+                        <div
+                          key={perm.key}
+                          onClick={() => toggleAddPermission(perm.key)}
+                          className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition select-none ${
+                            checked
+                              ? "bg-amber-500/10 border-amber-500/40 text-slate-900 dark:text-white"
+                              : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-500"
+                          }`}
+                        >
+                          <div>
+                            <div className="font-semibold text-xs">{perm.label}</div>
+                            <div className="text-[10px] text-slate-400 line-clamp-1">
+                              {perm.description}
+                            </div>
+                          </div>
+                          <div
+                            className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ml-2 ${
+                              checked
+                                ? "bg-amber-500 border-amber-500 text-slate-950 font-bold"
+                                : "border-slate-300 dark:border-slate-600"
+                            }`}
+                          >
+                            {checked && <Check className="w-3 h-3 stroke-[3]" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <button
@@ -606,7 +599,9 @@ export default function AdminUsersPage() {
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                   <Pencil className="w-4 h-4 text-amber-500" />
-                  Edit Admin Access & Permissions: {editingUser.name}
+                  {editingUser.role === "super_admin"
+                    ? `Edit Super Admin: ${editingUser.name}`
+                    : `Edit Admin Access & Permissions: ${editingUser.name}`}
                 </h3>
                 <button
                   onClick={() => setEditingUser(null)}
@@ -620,7 +615,7 @@ export default function AdminUsersPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="font-semibold text-slate-700 dark:text-slate-300">
-                      Full Name
+                      Full Name *
                     </label>
                     <input
                       type="text"
@@ -633,6 +628,23 @@ export default function AdminUsersPage() {
                     />
                   </div>
 
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={editFormData.email}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, email: e.target.value })
+                      }
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="font-semibold text-slate-700 dark:text-slate-300">
                       Account Status
@@ -648,46 +660,48 @@ export default function AdminUsersPage() {
                       <option value="inactive">Inactive (Access Blocked)</option>
                     </select>
                   </div>
+
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">
+                      Reset Password (optional)
+                    </label>
+                    <input
+                      type="password"
+                      minLength={6}
+                      value={editFormData.password}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, password: e.target.value })
+                      }
+                      placeholder="Leave empty to keep current"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">
-                    Reset Password (optional)
-                  </label>
-                  <input
-                    type="password"
-                    minLength={6}
-                    value={editFormData.password}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, password: e.target.value })
-                    }
-                    placeholder="Leave empty to keep current password"
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">
-                    Role
-                  </label>
-                  <select
-                    value={editFormData.role}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, role: e.target.value })
-                    }
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
-                  >
-                    <option value="admin">Restricted Admin</option>
-                    <option value="super_admin">Super Admin</option>
-                  </select>
-                </div>
-
-                {editFormData.role === "admin" && (
+                {/* If Super Admin, show badge notice; if normal admin, show module permissions list */}
+                {editingUser.role === "super_admin" ? (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-amber-500 shrink-0" />
+                      <div>
+                        <span className="font-bold text-amber-400">Super Admin (System Owner)</span>
+                        <p className="text-[11px] text-slate-400">
+                          Full unrestricted master access to all operations & modules
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
                   <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex items-center justify-between">
-                      <label className="font-bold text-slate-700 dark:text-slate-300">
-                        Granted Module Permissions
-                      </label>
+                      <div>
+                        <label className="font-bold text-slate-700 dark:text-slate-300">
+                          Granted Module Permissions
+                        </label>
+                        <p className="text-[10px] text-slate-400">
+                          Assign which operational sections this admin can access
+                        </p>
+                      </div>
                       <div className="flex items-center gap-2 text-[11px]">
                         <button
                           type="button"

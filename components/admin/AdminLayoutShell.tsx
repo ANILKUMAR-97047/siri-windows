@@ -11,10 +11,13 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, isLoading } = useAdminAuth();
 
-  const isLoginPage = pathname === "/admin/login";
+  // Public auth pages (login, forgot-password, reset-password) get a clean standalone presentation without sidebar or header
+  const isPublicAuthPage =
+    pathname === "/admin/login" ||
+    pathname === "/admin/forgot-password" ||
+    pathname === "/admin/reset-password";
 
-  // Login page gets a clean standalone presentation without sidebar or header
-  if (isLoginPage) {
+  if (isPublicAuthPage) {
     return <main className="min-h-screen w-full">{children}</main>;
   }
 
@@ -33,7 +36,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If unauthenticated (AuthProvider also triggers router.push)
+  // If unauthenticated (AuthProvider also triggers router.push to /admin/login)
   if (!user) {
     return null;
   }

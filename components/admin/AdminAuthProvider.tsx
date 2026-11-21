@@ -30,7 +30,11 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const isLoginPage = pathname === "/admin/login";
+  // Public authentication pages that do not require an active admin session
+  const isPublicAuthPage =
+    pathname === "/admin/login" ||
+    pathname === "/admin/forgot-password" ||
+    pathname === "/admin/reset-password";
 
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -42,8 +46,10 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         if (data.user) {
           setUser(data.user);
-          // If on login page and already logged in, redirect to /admin
-          if (isLoginPage) {
+          // Only redirect to dashboard if the user is on the login page specifically.
+          // Do NOT redirect away from /admin/reset-password or /admin/forgot-password,
+          // so admins can test or complete password resets without cookie conflicts.
+          if (pathname === "/admin/login") {
             router.push("/admin");
           }
           return;
@@ -52,18 +58,18 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
       // Not authenticated
       setUser(null);
-      if (!isLoginPage && pathname.startsWith("/admin")) {
+      if (!isPublicAuthPage && pathname.startsWith("/admin")) {
         router.push("/admin/login");
       }
     } catch {
       setUser(null);
-      if (!isLoginPage && pathname.startsWith("/admin")) {
+      if (!isPublicAuthPage && pathname.startsWith("/admin")) {
         router.push("/admin/login");
       }
     } finally {
       setIsLoading(false);
     }
-  }, [isLoginPage, pathname, router]);
+  }, [isPublicAuthPage, pathname, router]);
 
   useEffect(() => {
     fetchCurrentUser();

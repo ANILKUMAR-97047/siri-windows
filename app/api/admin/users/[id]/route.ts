@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminClient } from "@/lib/supabase/admin";
 import {
   SESSION_COOKIE_NAME,
   verifySessionToken,
+  createSessionToken,
   hashPassword,
+  AdminUser,
 } from "@/lib/auth";
 
 async function getAuthenticatedSuperAdmin() {
@@ -37,20 +39,54 @@ export async function PUT(
     const body = await request.json();
     const { name, email, password, role, permissions, status } = body;
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getAdminClient();
 
     const updateData: Record<string, any> = {
       updated_at: new Date().toISOString(),
     };
 
     if (name) updateData.name = name.trim();
-    if (email) updateData.email = email.trim().toLowerCase();
-    if (role) updateData.role = role;
+    if (email && typeof email === "string" && email.trim()) {
+      const cleanEmail = email.trim().toLowerCase();
+      // Check if duplicate exists for another admin
+      const { data: existing } = await (supabase
+        .from("admin_users" as any) as any)
+        .select("id")
+        .ilike("email", cleanEmail)
+        .neq("id", id)
+        .maybeSingle();
+
+      if (existing) {
+        return NextResponse.json(
+          { error: "Another administrator is already using this email address." },
+          { status: 400 }
+        );
+      }
+      updateData.email = cleanEmail;
+    }
+    // Look up target user to enforce role security
+    const { data: targetUser } = await (supabase
+      .from("admin_users" as any) as any)
+      .select("id, role")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (!targetUser) {
+      return NextResponse.json({ error: "Administrator not found." }, { status: 404 });
+    }
+
+    // Role cannot be changed or elevated: only the owner remains super_admin, all others are admin
+    updateData.role = targetUser.role === "super_admin" ? "super_admin" : "admin";
+
     if (permissions !== undefined) {
-      updateData.permissions = role === "super_admin" ? ["*"] : permissions;
+      if (targetUser.role === "super_admin") {
+        updateData.permissions = ["*"];
+      } else {
+        // Normal admins only get specific module permissions (no wildcard '*')
+        updateData.permissions = Array.isArray(permissions)
+          ? permissions.filter((p: string) => p !== "*")
+          : [];
+      }
     }
     if (status) updateData.status = status;
 
@@ -61,8 +97,8 @@ export async function PUT(
       updateData.password_salt = salt;
     }
 
-    const { data: updatedUser, error } = await supabase
-      .from("admin_users")
+    const { data: updatedUser, error } = await (supabase
+      .from("admin_users" as any) as any)
       .update(updateData)
       .eq("id", id)
       .select("id, name, email, role, permissions, status, last_login_at, created_at, updated_at")
@@ -70,6 +106,29 @@ export async function PUT(
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // If the super admin is updating their own account, refresh the session cookie
+    if (superAdmin.userId === id) {
+      const adminProfile: AdminUser = {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        permissions: updatedUser.permissions || [],
+        status: updatedUser.status,
+        last_login_at: updatedUser.last_login_at,
+        created_at: updatedUser.created_at,
+      };
+      const newToken = createSessionToken(adminProfile);
+      const cookieStore = await cookies();
+      cookieStore.set(SESSION_COOKIE_NAME, newToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/",
+      });
     }
 
     return NextResponse.json({ success: true, user: updatedUser });
@@ -106,13 +165,10 @@ export async function DELETE(
   }
 
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getAdminClient();
 
-    const { error } = await supabase
-      .from("admin_users")
+    const { error } = await (supabase
+      .from("admin_users" as any) as any)
       .delete()
       .eq("id", id);
 

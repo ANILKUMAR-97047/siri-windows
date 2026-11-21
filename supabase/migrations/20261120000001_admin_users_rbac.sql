@@ -35,8 +35,8 @@ END $$;
 -- Seed Initial Super Admin
 INSERT INTO admin_users (name, email, password_hash, password_salt, role, permissions, status)
 VALUES (
-    'Master Admin',
-    'admin@siriwindows.in',
+    'Rajesh',
+    'sirienterprises8003@gmail.com',
     '4c785b4f5d8a41724fa8c4bb81fb38cbb8b5c00a68dbff449234cc259d0428355d96c5fa8df38a27d0c3deddbe8cdad96544df02c4824cf22df1fbdead8be3e6',
     '89eb9fae9ba4c9b25d391ca55fed0373',
     'super_admin',

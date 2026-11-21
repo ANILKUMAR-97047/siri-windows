@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminClient } from "@/lib/supabase/admin";
 import {
   SESSION_COOKIE_NAME,
   verifySessionToken,
   hashPassword,
-  AdminUser,
 } from "@/lib/auth";
 
 async function getAuthenticatedSuperAdmin() {
@@ -29,13 +28,10 @@ export async function GET() {
     );
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = getAdminClient();
 
-  const { data: users, error } = await supabase
-    .from("admin_users")
+  const { data: users, error } = await (supabase
+    .from("admin_users" as any) as any)
     .select("id, name, email, role, permissions, status, last_login_at, created_at")
     .order("created_at", { ascending: false });
 
@@ -46,7 +42,7 @@ export async function GET() {
   return NextResponse.json({ users });
 }
 
-// POST: Create a new admin user (Super Admin only)
+// POST: Create a new admin user (Super Admin only - always creates role: 'admin')
 export async function POST(request: Request) {
   const superAdmin = await getAuthenticatedSuperAdmin();
   if (!superAdmin) {
@@ -58,7 +54,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, email, password, role = "admin", permissions = [] } = body;
+    const { name, email, password, permissions = [] } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -74,17 +70,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getAdminClient();
 
     // Check if email already exists
-    const { data: existing } = await supabase
-      .from("admin_users")
+    const { data: existing } = await (supabase
+      .from("admin_users" as any) as any)
       .select("id")
       .ilike("email", email.trim())
-      .single();
+      .maybeSingle();
 
     if (existing) {
       return NextResponse.json(
@@ -95,16 +88,21 @@ export async function POST(request: Request) {
 
     const { hash, salt } = hashPassword(password);
 
-    const { data: newUser, error: insertError } = await supabase
-      .from("admin_users")
+    // Filter out wildcard '*' to ensure only specific granted modules are given
+    const safePermissions = Array.isArray(permissions)
+      ? permissions.filter((p: string) => p !== "*")
+      : [];
+
+    const { data: newUser, error: insertError } = await (supabase
+      .from("admin_users" as any) as any)
       .insert([
         {
           name: name.trim(),
           email: email.trim().toLowerCase(),
           password_hash: hash,
           password_salt: salt,
-          role: role === "super_admin" ? "super_admin" : "admin",
-          permissions: role === "super_admin" ? ["*"] : permissions,
+          role: "admin", // All created accounts are strictly normal admins
+          permissions: safePermissions,
           status: "active",
           created_by: superAdmin.userId,
         },
