@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import {
   X,
   Printer,
-  Download,
   Calendar,
   User,
   Building,
@@ -12,7 +11,8 @@ import {
   Clock,
   UserX,
   FileText,
-  Award,
+  AlertTriangle,
+  Info,
 } from "lucide-react";
 
 interface StaffMember {
@@ -50,6 +50,8 @@ interface AttendancePdfModalProps {
       onLeave: number;
       absent: number;
       overtime: number;
+      isEmployedInMonth?: boolean;
+      joinDate?: string | null;
     }
   >;
   monthRecords: AttendanceRecord[];
@@ -105,7 +107,18 @@ export default function AttendancePdfModal({
     return new Date(year, month, 0).getDate();
   }, [year, month]);
 
-  // Aggregate overall stats for all staff report
+  const endOfMonthStr = `${year}-${String(month).padStart(2, "0")}-${String(totalDaysInMonth).padStart(2, "0")}`;
+  const startOfMonthStr = `${year}-${String(month).padStart(2, "0")}-01`;
+
+  // Filter staff who were actually employed in or prior to this month (join_date <= endOfMonth)
+  const eligibleStaffForMonth = useMemo(() => {
+    return allStaff.filter((s) => {
+      if (!s.join_date) return true;
+      return s.join_date <= endOfMonthStr;
+    });
+  }, [allStaff, endOfMonthStr]);
+
+  // Aggregate overall stats for all staff report (strictly only for employed staff in this month)
   const allStaffTotals = useMemo(() => {
     let totalPresent = 0;
     let totalHalfDays = 0;
@@ -113,12 +126,15 @@ export default function AttendancePdfModal({
     let totalAbsent = 0;
     let totalOT = 0;
 
-    Object.values(monthlyMap).forEach((st) => {
-      totalPresent += st.present;
-      totalHalfDays += st.halfDay;
-      totalLeaves += st.onLeave;
-      totalAbsent += st.absent;
-      totalOT += st.overtime;
+    eligibleStaffForMonth.forEach((staff) => {
+      const st = monthlyMap[staff.id];
+      if (st) {
+        totalPresent += st.present || 0;
+        totalHalfDays += st.halfDay || 0;
+        totalLeaves += st.onLeave || 0;
+        totalAbsent += st.absent || 0;
+        totalOT += st.overtime || 0;
+      }
     });
 
     return {
@@ -127,9 +143,15 @@ export default function AttendancePdfModal({
       totalLeaves,
       totalAbsent,
       totalOT,
-      staffCount: allStaff.length,
+      staffCount: eligibleStaffForMonth.length,
     };
-  }, [monthlyMap, allStaff]);
+  }, [monthlyMap, eligibleStaffForMonth]);
+
+  // Check individual staff member's relationship with the report month
+  const isIndividualPreJoinMonth = useMemo(() => {
+    if (!staffMember?.join_date) return false;
+    return endOfMonthStr < staffMember.join_date;
+  }, [staffMember, endOfMonthStr]);
 
   // Daily records for individual staff member
   const individualDailyRecords = useMemo(() => {
@@ -139,7 +161,10 @@ export default function AttendancePdfModal({
     monthRecords
       .filter((r) => r.staff_id === staffMember.id)
       .forEach((r) => {
-        mapByDate[r.date] = r;
+        // Only include if date is on or after join date
+        if (!staffMember.join_date || r.date >= staffMember.join_date) {
+          mapByDate[r.date] = r;
+        }
       });
 
     const days = [];
@@ -149,17 +174,67 @@ export default function AttendancePdfModal({
       const isSunday = d.getDay() === 0;
       const dayName = d.toLocaleDateString("en-IN", { weekday: "short" });
 
+      const isBeforeJoin = Boolean(staffMember.join_date && dateStr < staffMember.join_date);
       const existing = mapByDate[dateStr];
+
       days.push({
         date: dateStr,
         dayNumber: day,
         dayName,
         isSunday,
-        record: existing || null,
+        isBeforeJoin,
+        record: isBeforeJoin ? null : existing || null,
       });
     }
     return days;
   }, [staffMember, monthRecords, totalDaysInMonth, year, month]);
+
+  // Individual monthly summary stats (excluding days prior to join date)
+  const individualStats = useMemo(() => {
+    if (!staffMember) {
+      return { present: 0, halfDay: 0, onLeave: 0, absent: 0, overtime: 0 };
+    }
+
+    if (isIndividualPreJoinMonth) {
+      return { present: 0, halfDay: 0, onLeave: 0, absent: 0, overtime: 0 };
+    }
+
+    let present = 0;
+    let halfDay = 0;
+    let onLeave = 0;
+    let absent = 0;
+    let overtime = 0;
+
+    individualDailyRecords.forEach((dayItem) => {
+      if (dayItem.isBeforeJoin) {
+        // Not employed yet: do not count in any metric (not absent!)
+        return;
+      }
+      if (dayItem.isSunday) {
+        // Sunday: regular weekly holiday
+        return;
+      }
+
+      const rec = dayItem.record;
+      if (rec) {
+        if (rec.status === "present") present++;
+        else if (rec.status === "half_day") halfDay++;
+        else if (rec.status === "on_leave") onLeave++;
+        else if (rec.status === "absent") absent++;
+
+        if (rec.overtime_hours) overtime += Number(rec.overtime_hours);
+      } else {
+        // No record logged on or after join date
+        if (staffMember.status === "on_leave") {
+          onLeave++;
+        } else {
+          absent++;
+        }
+      }
+    });
+
+    return { present, halfDay, onLeave, absent, overtime };
+  }, [staffMember, isIndividualPreJoinMonth, individualDailyRecords]);
 
   // Print / Save as PDF handler using hidden iframe (NO new tab / about:blank opened)
   const handlePrint = () => {
@@ -210,7 +285,7 @@ export default function AttendancePdfModal({
               }
             }
             body {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              font-family: "Manrope", "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
               color: #0f172a;
               background: #ffffff;
               margin: 0;
@@ -266,6 +341,16 @@ export default function AttendancePdfModal({
             .badge-leave { background-color: #f3e8ff; color: #7e22ce; }
             .badge-absent { background-color: #fee2e2; color: #b91c1c; }
             .badge-sunday { background-color: #f1f5f9; color: #64748b; }
+            .badge-not-joined { background-color: #f8fafc; color: #94a3b8; font-weight: 600; border: 1px dashed #cbd5e1; }
+            .notice-box {
+              background-color: #eff6ff;
+              border: 1px solid #bfdbfe;
+              color: #1e40af;
+              padding: 10px 12px;
+              border-radius: 6px;
+              font-size: 10px;
+              margin-bottom: 14px;
+            }
             .stats-grid {
               display: flex;
               gap: 10px;
@@ -455,7 +540,7 @@ export default function AttendancePdfModal({
                   </div>
                 </div>
 
-                {/* All Staff Table */}
+                {/* All Staff Table (Filtered to only staff employed in this month) */}
                 <table className="w-full text-left text-[10px] border border-slate-300 border-collapse">
                   <thead>
                     <tr className="bg-slate-100 text-slate-700 uppercase font-bold text-[9px]">
@@ -472,7 +557,7 @@ export default function AttendancePdfModal({
                     </tr>
                   </thead>
                   <tbody>
-                    {allStaff.map((staff, idx) => {
+                    {eligibleStaffForMonth.map((staff, idx) => {
                       const st = monthlyMap[staff.id] || {
                         present: 0,
                         halfDay: 0,
@@ -480,6 +565,11 @@ export default function AttendancePdfModal({
                         absent: 0,
                         overtime: 0,
                       };
+
+                      const isMidMonthJoin =
+                        staff.join_date &&
+                        staff.join_date > startOfMonthStr &&
+                        staff.join_date <= endOfMonthStr;
 
                       return (
                         <tr key={staff.id} className="border-b border-slate-200 hover:bg-slate-50">
@@ -527,6 +617,10 @@ export default function AttendancePdfModal({
                           <td className="p-2 border border-slate-300 text-right font-semibold">
                             {staff.status === "on_leave" || staff.status === "inactive" ? (
                               <span className="text-purple-700 font-bold">Unpaid Leave (₹0)</span>
+                            ) : isMidMonthJoin ? (
+                              <span className="text-blue-700 font-bold">
+                                Prorated (Joined {formatDate(staff.join_date)})
+                              </span>
                             ) : (
                               <span className="text-emerald-700 font-bold">Full Salary</span>
                             )}
@@ -570,36 +664,47 @@ export default function AttendancePdfModal({
                     </div>
                   </div>
 
-                  {/* Monthly Summary Cards for this staff */}
-                  {(() => {
-                    const st = monthlyMap[staffMember.id] || {
-                      present: 0,
-                      halfDay: 0,
-                      onLeave: 0,
-                      absent: 0,
-                      overtime: 0,
-                    };
-                    return (
-                      <div className="stats-grid flex gap-2 mb-4">
-                        <div className="stat-card flex-1 border border-emerald-200 rounded p-2 bg-emerald-50/50">
-                          <div className="stat-label text-[8px] font-bold text-emerald-700">Days Present</div>
-                          <div className="stat-value text-sm font-black text-emerald-800">{st.present} Days</div>
-                        </div>
-                        <div className="stat-card flex-1 border border-amber-200 rounded p-2 bg-amber-50/50">
-                          <div className="stat-label text-[8px] font-bold text-amber-700">Half Days</div>
-                          <div className="stat-value text-sm font-black text-amber-800">{st.halfDay} Days</div>
-                        </div>
-                        <div className="stat-card flex-1 border border-purple-200 rounded p-2 bg-purple-50/50">
-                          <div className="stat-label text-[8px] font-bold text-purple-700">Leaves Taken</div>
-                          <div className="stat-value text-sm font-black text-purple-800">{st.onLeave} Days</div>
-                        </div>
-                        <div className="stat-card flex-1 border border-blue-200 rounded p-2 bg-blue-50/50">
-                          <div className="stat-label text-[8px] font-bold text-blue-700">Total Overtime</div>
-                          <div className="stat-value text-sm font-black text-blue-800">{st.overtime} Hours</div>
-                        </div>
+                  {/* Notice if employee had not yet joined during this month */}
+                  {isIndividualPreJoinMonth && (
+                    <div className="notice-box">
+                      <strong>⚠️ Employment Not Commenced: </strong>
+                      {staffMember.name} joined Siri Windows & Doors on {formatDate(staffMember.join_date)}. This employee was not employed during {monthName} {year}, so no attendance was recorded.
+                    </div>
+                  )}
+
+                  {/* Monthly Summary Cards for this staff (calculated strictly from join date onwards) */}
+                  <div className="stats-grid flex gap-2 mb-4">
+                    <div className="stat-card flex-1 border border-emerald-200 rounded p-2 bg-emerald-50/50">
+                      <div className="stat-label text-[8px] font-bold text-emerald-700">Days Present</div>
+                      <div className="stat-value text-sm font-black text-emerald-800">
+                        {individualStats.present} Days
                       </div>
-                    );
-                  })()}
+                    </div>
+                    <div className="stat-card flex-1 border border-amber-200 rounded p-2 bg-amber-50/50">
+                      <div className="stat-label text-[8px] font-bold text-amber-700">Half Days</div>
+                      <div className="stat-value text-sm font-black text-amber-800">
+                        {individualStats.halfDay} Days
+                      </div>
+                    </div>
+                    <div className="stat-card flex-1 border border-purple-200 rounded p-2 bg-purple-50/50">
+                      <div className="stat-label text-[8px] font-bold text-purple-700">Leaves Taken</div>
+                      <div className="stat-value text-sm font-black text-purple-800">
+                        {individualStats.onLeave} Days
+                      </div>
+                    </div>
+                    <div className="stat-card flex-1 border border-red-200 rounded p-2 bg-red-50/50">
+                      <div className="stat-label text-[8px] font-bold text-red-700">Days Absent</div>
+                      <div className="stat-value text-sm font-black text-red-800">
+                        {individualStats.absent} Days
+                      </div>
+                    </div>
+                    <div className="stat-card flex-1 border border-blue-200 rounded p-2 bg-blue-50/50">
+                      <div className="stat-label text-[8px] font-bold text-blue-700">Total Overtime</div>
+                      <div className="stat-value text-sm font-black text-blue-800">
+                        {individualStats.overtime} Hours
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Day-by-Day Detailed Log Table */}
                   <div className="mb-2">
@@ -623,15 +728,50 @@ export default function AttendancePdfModal({
                     <tbody>
                       {individualDailyRecords.map((item) => {
                         const rec = item.record;
-                        const status = item.isSunday
-                          ? "holiday"
-                          : rec?.status || (staffMember.status === "on_leave" ? "on_leave" : "absent");
+
+                        let statusBadge = null;
+                        let checkIn = "--";
+                        let checkOut = "--";
+                        let overtime = "--";
+                        let notes = "--";
+
+                        if (item.isBeforeJoin) {
+                          // Day is prior to employee's start date
+                          statusBadge = <span className="badge badge-not-joined">NOT JOINED</span>;
+                          notes = `Pre-employment (Joined ${formatDate(staffMember.join_date)})`;
+                        } else if (item.isSunday) {
+                          statusBadge = <span className="badge badge-sunday">SUNDAY</span>;
+                          notes = "Weekly Holiday";
+                        } else {
+                          const status =
+                            rec?.status ||
+                            (staffMember.status === "on_leave" ? "on_leave" : "absent");
+
+                          if (status === "present") {
+                            statusBadge = <span className="badge badge-present">PRESENT</span>;
+                          } else if (status === "half_day") {
+                            statusBadge = <span className="badge badge-half">HALF DAY</span>;
+                          } else if (status === "on_leave") {
+                            statusBadge = <span className="badge badge-leave">ON LEAVE</span>;
+                          } else {
+                            statusBadge = <span className="badge badge-absent">ABSENT</span>;
+                          }
+
+                          if (rec?.check_in_time) checkIn = rec.check_in_time.substring(0, 5);
+                          if (rec?.check_out_time) checkOut = rec.check_out_time.substring(0, 5);
+                          if (rec?.overtime_hours) overtime = `+${rec.overtime_hours} hrs`;
+                          if (rec?.notes) notes = rec.notes;
+                        }
 
                         return (
                           <tr
                             key={item.date}
                             className={`border-b border-slate-200 ${
-                              item.isSunday ? "bg-slate-50/70 text-slate-400" : ""
+                              item.isBeforeJoin
+                                ? "bg-slate-50/40 text-slate-400"
+                                : item.isSunday
+                                ? "bg-slate-50/70 text-slate-400"
+                                : ""
                             }`}
                           >
                             <td className="p-1.5 border border-slate-300 text-center font-bold">
@@ -641,29 +781,19 @@ export default function AttendancePdfModal({
                               {item.dayName}
                             </td>
                             <td className="p-1.5 border border-slate-300 text-center">
-                              {item.isSunday ? (
-                                <span className="badge badge-sunday">SUNDAY</span>
-                              ) : status === "present" ? (
-                                <span className="badge badge-present">PRESENT</span>
-                              ) : status === "half_day" ? (
-                                <span className="badge badge-half">HALF DAY</span>
-                              ) : status === "on_leave" ? (
-                                <span className="badge badge-leave">ON LEAVE</span>
-                              ) : (
-                                <span className="badge badge-absent">ABSENT</span>
-                              )}
+                              {statusBadge}
                             </td>
                             <td className="p-1.5 border border-slate-300 text-center">
-                              {rec?.check_in_time ? rec.check_in_time.substring(0, 5) : "--"}
+                              {checkIn}
                             </td>
                             <td className="p-1.5 border border-slate-300 text-center">
-                              {rec?.check_out_time ? rec.check_out_time.substring(0, 5) : "--"}
+                              {checkOut}
                             </td>
                             <td className="p-1.5 border border-slate-300 text-center font-semibold">
-                              {rec?.overtime_hours ? `+${rec.overtime_hours} hrs` : "--"}
+                              {overtime}
                             </td>
                             <td className="p-1.5 border border-slate-300 text-slate-600 truncate max-w-[200px]">
-                              {rec?.notes || (item.isSunday ? "Weekly Holiday" : "--")}
+                              {notes}
                             </td>
                           </tr>
                         );

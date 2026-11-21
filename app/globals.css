@@ -1,7 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
 /* ============================================================
-   Siri Windows â€” Design System (Tailwind CSS v4)
+   Siri Windows — Exclusive Font System
+   Headings & Display : Poppins
+   Body, UI & Content : Manrope
    ============================================================ */
 
 @theme {
@@ -32,9 +35,14 @@
   --color-slate-500: #6b7a96;
   --color-slate-400: #94a3b8;
 
-  /* ---- Font Families ---- */
-  --font-heading: var(--font-playfair), "Georgia", serif;
-  --font-body: var(--font-inter), "Helvetica Neue", sans-serif;
+  /* ---- Font Families (Exclusively Poppins & Manrope) ---- */
+  --font-heading: var(--font-poppins), "Poppins", sans-serif;
+  --font-body: var(--font-manrope), "Manrope", sans-serif;
+  --font-poppins: var(--font-poppins), "Poppins", sans-serif;
+  --font-manrope: var(--font-manrope), "Manrope", sans-serif;
+  --font-sans: var(--font-manrope), "Manrope", sans-serif;
+  --font-serif: var(--font-poppins), "Poppins", sans-serif;
+  --font-display: var(--font-poppins), "Poppins", sans-serif;
 
   /* ---- Fluid Type Scale (clamp-based) ---- */
   --text-hero: clamp(2.5rem, 5vw + 1rem, 5rem);
@@ -58,6 +66,13 @@
   --radius-xl: 24px;
 }
 
+:root {
+  --font-heading: var(--font-poppins), "Poppins", sans-serif;
+  --font-body: var(--font-manrope), "Manrope", sans-serif;
+  --font-playfair: var(--font-poppins), "Poppins", sans-serif;
+  --font-inter: var(--font-manrope), "Manrope", sans-serif;
+}
+
 /* ---- Global Base Styles ---- */
 *,
 *::before,
@@ -70,6 +85,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  font-family: var(--font-manrope), "Manrope", sans-serif;
 }
 
 /* Lenis smooth scroll */
@@ -91,7 +107,7 @@ html.lenis body {
 }
 
 body {
-  font-family: var(--font-body);
+  font-family: var(--font-manrope), "Manrope", sans-serif;
   color: var(--color-slate-700);
   background: #ffffff;
   line-height: 1.65;
@@ -101,10 +117,10 @@ body {
 /* ---- Typography ---- */
 @layer base {
   h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
-  color: var(--color-navy-950);
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+    font-family: var(--font-poppins), "Poppins", sans-serif;
+    color: var(--color-navy-950);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -181,7 +197,7 @@ body {
 
 /* ---- Section Label (small caps above heading) ---- */
 .section-label {
-  font-family: var(--font-body);
+  font-family: var(--font-poppins), "Poppins", sans-serif;
   font-size: var(--text-small);
   font-weight: 600;
   letter-spacing: 0.15em;
@@ -225,7 +241,7 @@ body {
   width: 100%;
   padding: 1rem 1rem 0.5rem;
   font-size: var(--text-body);
-  font-family: var(--font-body);
+  font-family: var(--font-manrope), "Manrope", sans-serif;
   background: var(--color-off-white);
   border: 1.5px solid var(--color-blue-200);
   border-radius: var(--radius-md);

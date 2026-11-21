@@ -23,6 +23,7 @@ import {
   FileText,
   Printer,
   Download,
+  Info,
 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import AttendancePdfModal from "@/components/admin/AttendancePdfModal";
@@ -51,6 +52,20 @@ interface AttendanceRecord {
   staff?: StaffMember;
 }
 
+function formatDate(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
 export default function StaffAttendancePage() {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceRecord>>({});
@@ -64,6 +79,8 @@ export default function StaffAttendancePage() {
         onLeave: number;
         absent: number;
         overtime: number;
+        isEmployedInMonth?: boolean;
+        joinDate?: string | null;
       }
     >
   >({});
@@ -82,6 +99,18 @@ export default function StaffAttendancePage() {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [pdfMode, setPdfMode] = useState<"all" | "individual">("all");
   const [selectedPdfStaff, setSelectedPdfStaff] = useState<StaffMember | null>(null);
+
+  // Month parameters derived from selectedDate
+  const [yearStr, monthStr] = selectedDate.split("-");
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+
+  const totalDaysInMonth = useMemo(() => {
+    return new Date(year, month, 0).getDate();
+  }, [year, month]);
+
+  const endOfMonthStr = `${year}-${String(month).padStart(2, "0")}-${String(totalDaysInMonth).padStart(2, "0")}`;
+  const startOfMonthStr = `${year}-${String(month).padStart(2, "0")}-01`;
 
   // Fetch dynamic attendance and staff from the backend API
   const fetchData = useCallback(async () => {
@@ -144,8 +173,13 @@ export default function StaffAttendancePage() {
     setPdfModalOpen(true);
   };
 
-  // Update in-memory attendance state for a staff member
+  // Update in-memory attendance state for a staff member (only if already employed on selected date)
   const handleStatusChange = (staffId: string, status: AttendanceRecord["status"]) => {
+    const staff = staffList.find((s) => s.id === staffId);
+    if (staff?.join_date && selectedDate < staff.join_date) {
+      return; // Prevent modifying attendance prior to join date
+    }
+
     setAttendanceMap((prev) => ({
       ...prev,
       [staffId]: {
@@ -168,6 +202,11 @@ export default function StaffAttendancePage() {
     field: "check_in_time" | "check_out_time" | "overtime_hours" | "notes",
     val: any
   ) => {
+    const staff = staffList.find((s) => s.id === staffId);
+    if (staff?.join_date && selectedDate < staff.join_date) {
+      return; // Prevent modifying attendance prior to join date
+    }
+
     setAttendanceMap((prev) => ({
       ...prev,
       [staffId]: {
@@ -181,13 +220,18 @@ export default function StaffAttendancePage() {
     }));
   };
 
-  // 1-Click "Mark All Present" integrated directly with backend
+  // 1-Click "Mark All Present" — strictly only for staff whose join_date <= selectedDate!
   const handleMarkAllPresent = async () => {
     setSaving(true);
     setErrorMsg(null);
     const recordsToSend: AttendanceRecord[] = [];
 
-    staffList.forEach((staff) => {
+    // Filter to only staff employed on this selected date
+    const eligibleStaff = staffList.filter(
+      (s) => !s.join_date || s.join_date <= selectedDate
+    );
+
+    eligibleStaff.forEach((staff) => {
       const isLeave = staff.status === "on_leave" || staff.status === "inactive";
       recordsToSend.push({
         staff_id: staff.id,
@@ -212,7 +256,7 @@ export default function StaffAttendancePage() {
         throw new Error(json.error || "Failed to mark all present");
       }
 
-      const map: Record<string, AttendanceRecord> = {};
+      const map: Record<string, AttendanceRecord> = { ...attendanceMap };
       recordsToSend.forEach((r) => {
         map[r.staff_id] = r;
       });
@@ -228,13 +272,18 @@ export default function StaffAttendancePage() {
     }
   };
 
-  // Save attendance changes to backend API
+  // Save attendance changes to backend API — strictly only for staff whose join_date <= selectedDate!
   const handleSaveAttendance = async () => {
     setSaving(true);
     setErrorMsg(null);
     const recordsToSend: AttendanceRecord[] = [];
 
-    staffList.forEach((staff) => {
+    // Filter to only staff employed on this selected date
+    const eligibleStaff = staffList.filter(
+      (s) => !s.join_date || s.join_date <= selectedDate
+    );
+
+    eligibleStaff.forEach((staff) => {
       const rec = attendanceMap[staff.id];
       if (rec) {
         recordsToSend.push({
@@ -283,7 +332,17 @@ export default function StaffAttendancePage() {
     }
   };
 
-  // Stats for the selected date
+  // Staff employed on the selected date
+  const staffEmployedOnSelectedDate = useMemo(() => {
+    return staffList.filter((s) => !s.join_date || s.join_date <= selectedDate);
+  }, [staffList, selectedDate]);
+
+  // Staff employed during this selected month
+  const staffEmployedInSelectedMonth = useMemo(() => {
+    return staffList.filter((s) => !s.join_date || s.join_date <= endOfMonthStr);
+  }, [staffList, endOfMonthStr]);
+
+  // Stats for the selected date (strictly for staff employed on this date)
   const dateStats = useMemo(() => {
     let present = 0;
     let halfDay = 0;
@@ -291,7 +350,7 @@ export default function StaffAttendancePage() {
     let absent = 0;
     let totalOT = 0;
 
-    staffList.forEach((staff) => {
+    staffEmployedOnSelectedDate.forEach((staff) => {
       const rec = attendanceMap[staff.id];
       const status = rec?.status || (staff.status === "on_leave" ? "on_leave" : "unmarked");
       if (status === "present") present++;
@@ -305,9 +364,9 @@ export default function StaffAttendancePage() {
     });
 
     return { present, halfDay, onLeave, absent, totalOT };
-  }, [staffList, attendanceMap]);
+  }, [staffEmployedOnSelectedDate, attendanceMap]);
 
-  // Filter staff list
+  // Filter staff list based on search query
   const filteredStaff = useMemo(() => {
     if (!searchQuery.trim()) return staffList;
     const q = searchQuery.toLowerCase();
@@ -318,6 +377,21 @@ export default function StaffAttendancePage() {
         s.department.toLowerCase().includes(q)
     );
   }, [staffList, searchQuery]);
+
+  // Monthly summary staff list (filtered to month-eligible staff, or sorted so active are first)
+  const monthlyFilteredStaff = useMemo(() => {
+    let list = staffEmployedInSelectedMonth;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.role.toLowerCase().includes(q) ||
+          s.department.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [staffEmployedInSelectedMonth, searchQuery]);
 
   // Formatted date string (e.g. Friday, 20 November 2026)
   const formattedDateTitle = useMemo(() => {
@@ -505,7 +579,9 @@ export default function StaffAttendancePage() {
             </div>
             <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
               {dateStats.present}
-              <span className="text-xs text-slate-400 font-normal ml-1">/ {staffList.length} staff</span>
+              <span className="text-xs text-slate-400 font-normal ml-1">
+                / {staffEmployedOnSelectedDate.length} staff
+              </span>
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">Full day at shop/site</div>
           </div>
@@ -613,6 +689,7 @@ export default function StaffAttendancePage() {
                     </tr>
                   ) : (
                     filteredStaff.map((staff) => {
+                      const isEmployedOnDate = !staff.join_date || staff.join_date <= selectedDate;
                       const rec = attendanceMap[staff.id];
                       const currentStatus =
                         rec?.status ||
@@ -623,7 +700,9 @@ export default function StaffAttendancePage() {
                       return (
                         <tr
                           key={staff.id}
-                          className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition"
+                          className={`hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition ${
+                            !isEmployedOnDate ? "opacity-60 bg-slate-50/40 dark:bg-slate-900/30" : ""
+                          }`}
                         >
                           {/* Staff details */}
                           <td className="py-3.5 px-4">
@@ -643,7 +722,7 @@ export default function StaffAttendancePage() {
                                 <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                   {staff.name}
                                 </div>
-                                <div className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-1.5 mt-0.5">
                                   <span>{staff.role}</span>
                                   {staff.status === "on_leave" && (
                                     <span className="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 px-1.5 py-0.2 rounded font-semibold">
@@ -655,6 +734,11 @@ export default function StaffAttendancePage() {
                                       Inactive
                                     </span>
                                   )}
+                                  {!isEmployedOnDate && (
+                                    <span className="text-[10px] bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 px-1.5 py-0.2 rounded border border-blue-200 dark:border-blue-800 font-semibold">
+                                      Joined {formatDate(staff.join_date)}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -662,62 +746,76 @@ export default function StaffAttendancePage() {
 
                           {/* Attendance Status Buttons */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="inline-flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                              <button
-                                type="button"
-                                onClick={() => handleStatusChange(staff.id, "present")}
-                                className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
-                                  currentStatus === "present"
-                                    ? "bg-emerald-600 text-white shadow-xs"
-                                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                                }`}
-                              >
-                                Present
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleStatusChange(staff.id, "half_day")}
-                                className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
-                                  currentStatus === "half_day"
-                                    ? "bg-amber-500 text-white shadow-xs"
-                                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                                }`}
-                              >
-                                Half Day
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleStatusChange(staff.id, "on_leave")}
-                                className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
-                                  currentStatus === "on_leave"
-                                    ? "bg-purple-600 text-white shadow-xs"
-                                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                                }`}
-                              >
-                                On Leave
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleStatusChange(staff.id, "absent")}
-                                className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
-                                  currentStatus === "absent"
-                                    ? "bg-red-600 text-white shadow-xs"
-                                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                                }`}
-                              >
-                                Absent
-                              </button>
-                            </div>
+                            {!isEmployedOnDate ? (
+                              <span className="inline-block px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700">
+                                Not Joined Yet
+                              </span>
+                            ) : (
+                              <div className="inline-flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                                <button
+                                  type="button"
+                                  onClick={() => handleStatusChange(staff.id, "present")}
+                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
+                                    currentStatus === "present"
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                                  }`}
+                                >
+                                  Present
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStatusChange(staff.id, "half_day")}
+                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
+                                    currentStatus === "half_day"
+                                      ? "bg-amber-500 text-white shadow-xs"
+                                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                                  }`}
+                                >
+                                  Half Day
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStatusChange(staff.id, "on_leave")}
+                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
+                                    currentStatus === "on_leave"
+                                      ? "bg-purple-600 text-white shadow-xs"
+                                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                                  }`}
+                                >
+                                  On Leave
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStatusChange(staff.id, "absent")}
+                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
+                                    currentStatus === "absent"
+                                      ? "bg-red-600 text-white shadow-xs"
+                                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                                  }`}
+                                >
+                                  Absent
+                                </button>
+                              </div>
+                            )}
                           </td>
 
                           {/* Check-in Time */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <input
                               type="time"
-                              disabled={currentStatus === "on_leave" || currentStatus === "absent"}
+                              disabled={
+                                !isEmployedOnDate ||
+                                currentStatus === "on_leave" ||
+                                currentStatus === "absent"
+                              }
                               value={
-                                rec?.check_in_time ||
-                                (currentStatus === "present" || currentStatus === "half_day" ? "09:00" : "")
+                                !isEmployedOnDate
+                                  ? ""
+                                  : rec?.check_in_time ||
+                                    (currentStatus === "present" || currentStatus === "half_day"
+                                      ? "09:00"
+                                      : "")
                               }
                               onChange={(e) =>
                                 handleFieldChange(staff.id, "check_in_time", e.target.value)
@@ -730,14 +828,20 @@ export default function StaffAttendancePage() {
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <input
                               type="time"
-                              disabled={currentStatus === "on_leave" || currentStatus === "absent"}
+                              disabled={
+                                !isEmployedOnDate ||
+                                currentStatus === "on_leave" ||
+                                currentStatus === "absent"
+                              }
                               value={
-                                rec?.check_out_time ||
-                                (currentStatus === "present"
-                                  ? "18:30"
-                                  : currentStatus === "half_day"
-                                  ? "13:30"
-                                  : "")
+                                !isEmployedOnDate
+                                  ? ""
+                                  : rec?.check_out_time ||
+                                    (currentStatus === "present"
+                                      ? "18:30"
+                                      : currentStatus === "half_day"
+                                      ? "13:30"
+                                      : "")
                               }
                               onChange={(e) =>
                                 handleFieldChange(staff.id, "check_out_time", e.target.value)
@@ -753,7 +857,8 @@ export default function StaffAttendancePage() {
                               min="0"
                               max="12"
                               step="0.5"
-                              value={rec?.overtime_hours ?? 0}
+                              disabled={!isEmployedOnDate}
+                              value={!isEmployedOnDate ? 0 : rec?.overtime_hours ?? 0}
                               onChange={(e) =>
                                 handleFieldChange(
                                   staff.id,
@@ -761,7 +866,7 @@ export default function StaffAttendancePage() {
                                   parseFloat(e.target.value) || 0
                                 )
                               }
-                              className="w-16 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 text-center font-semibold"
+                              className="w-16 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-slate-800 dark:text-slate-200 text-center font-semibold disabled:opacity-40"
                             />
                           </td>
 
@@ -769,12 +874,21 @@ export default function StaffAttendancePage() {
                           <td className="py-3.5 px-4">
                             <input
                               type="text"
-                              placeholder="e.g. Tanuku Shop / Site B"
-                              value={rec?.notes || ""}
+                              disabled={!isEmployedOnDate}
+                              placeholder={
+                                !isEmployedOnDate
+                                  ? `Joined ${formatDate(staff.join_date)}`
+                                  : "e.g. Tanuku Shop / Site B"
+                              }
+                              value={
+                                !isEmployedOnDate
+                                  ? `Pre-employment (Joined ${formatDate(staff.join_date)})`
+                                  : rec?.notes || ""
+                              }
                               onChange={(e) =>
                                 handleFieldChange(staff.id, "notes", e.target.value)
                               }
-                              className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
+                              className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 disabled:opacity-40"
                             />
                           </td>
 
@@ -858,90 +972,124 @@ export default function StaffAttendancePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {staffList.map((staff) => {
-                    const stats = monthlyMap[staff.id] || {
-                      present: 0,
-                      halfDay: 0,
-                      onLeave: 0,
-                      absent: 0,
-                      overtime: 0,
-                    };
+                  {monthlyFilteredStaff.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-400">
+                        No staff members were employed in this month matching your query.
+                      </td>
+                    </tr>
+                  ) : (
+                    monthlyFilteredStaff.map((staff) => {
+                      const stats = monthlyMap[staff.id] || {
+                        present: 0,
+                        halfDay: 0,
+                        onLeave: 0,
+                        absent: 0,
+                        overtime: 0,
+                      };
 
-                    return (
-                      <tr
-                        key={staff.id}
-                        className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition"
-                      >
-                        <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-900 dark:text-white">
-                            {staff.name}
-                          </div>
-                          <div className="text-[11px] text-slate-400">{staff.role}</div>
-                        </td>
+                      const isMidMonthJoin =
+                        staff.join_date &&
+                        staff.join_date > startOfMonthStr &&
+                        staff.join_date <= endOfMonthStr;
 
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span
-                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase ${
-                              staff.status === "active"
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
-                                : staff.status === "on_leave"
-                                ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
-                                : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
-                            }`}
-                          >
-                            {staff.status}
-                          </span>
-                        </td>
+                      return (
+                        <tr
+                          key={staff.id}
+                          className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition"
+                        >
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-slate-900 dark:text-white">
+                              {staff.name}
+                            </div>
+                            <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                              <span>{staff.role}</span>
+                              <span className="text-[10px] text-slate-400">
+                                • Joined: {formatDate(staff.join_date)}
+                              </span>
+                            </div>
+                          </td>
 
-                        <td className="py-3.5 px-4 font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                          {stats.present} days
-                        </td>
-
-                        <td className="py-3.5 px-4 text-amber-600 dark:text-amber-400 whitespace-nowrap">
-                          {stats.halfDay} days
-                        </td>
-
-                        <td className="py-3.5 px-4 text-purple-600 dark:text-purple-400 whitespace-nowrap">
-                          {stats.onLeave} days
-                        </td>
-
-                        <td className="py-3.5 px-4 text-red-500 whitespace-nowrap">
-                          {stats.absent} days
-                        </td>
-
-                        <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white whitespace-nowrap">
-                          {stats.overtime} hrs
-                        </td>
-
-                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                          {staff.status === "on_leave" || staff.status === "inactive" ? (
-                            <span className="text-[10px] text-purple-700 dark:text-purple-300 font-bold bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-md border border-purple-200 dark:border-purple-800">
-                              Unpaid Leave (₹0)
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <span
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase ${
+                                staff.status === "active"
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                                  : staff.status === "on_leave"
+                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                                  : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                              }`}
+                            >
+                              {staff.status}
                             </span>
-                          ) : (
-                            <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
-                              Full Salary
-                            </span>
-                          )}
-                        </td>
+                          </td>
 
-                        {/* Individual PDF Report Button */}
-                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                          <button
-                            onClick={() => handleOpenIndividualPdf(staff)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 text-xs font-bold transition cursor-pointer shadow-2xs"
-                            title={`Download ${staff.name}'s monthly attendance report PDF`}
-                          >
-                            <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                            <span>PDF Report</span>
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <td className="py-3.5 px-4 font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                            {stats.present} days
+                          </td>
+
+                          <td className="py-3.5 px-4 text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                            {stats.halfDay} days
+                          </td>
+
+                          <td className="py-3.5 px-4 text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                            {stats.onLeave} days
+                          </td>
+
+                          <td className="py-3.5 px-4 text-red-500 whitespace-nowrap">
+                            {stats.absent} days
+                          </td>
+
+                          <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                            {stats.overtime} hrs
+                          </td>
+
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            {staff.status === "on_leave" || staff.status === "inactive" ? (
+                              <span className="text-[10px] text-purple-700 dark:text-purple-300 font-bold bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-md border border-purple-200 dark:border-purple-800">
+                                Unpaid Leave (₹0)
+                              </span>
+                            ) : isMidMonthJoin ? (
+                              <span className="text-[10px] text-blue-700 dark:text-blue-300 font-bold bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-800">
+                                Prorated (Joined {formatDate(staff.join_date)})
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                                Full Salary
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Individual PDF Report Button */}
+                          <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                            <button
+                              onClick={() => handleOpenIndividualPdf(staff)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 text-xs font-bold transition cursor-pointer shadow-2xs"
+                              title={`Download ${staff.name}'s monthly attendance report PDF`}
+                            >
+                              <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                              <span>PDF Report</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
+
+            {/* Note if some staff joined in future months */}
+            {staffList.length > staffEmployedInSelectedMonth.length && (
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                <span>
+                  Showing {staffEmployedInSelectedMonth.length} active workforce members employed during this month.
+                </span>
+                <span className="text-slate-400">
+                  {staffList.length - staffEmployedInSelectedMonth.length} employee(s) joined in subsequent months.
+                </span>
+              </div>
+            )}
           </div>
         )}
 
