@@ -9,6 +9,7 @@ import {
   Phone,
   Banknote,
   Calendar,
+  CalendarCheck,
   Briefcase,
   Pencil,
   X,
@@ -164,6 +165,44 @@ export default function StaffPage() {
             s.id === editingStaff.id ? (data[0] as unknown as StaffMember) : s
           )
         );
+
+        // Sync salary record for current month if status changed to on_leave or inactive
+        try {
+          const now = new Date();
+          const curMonth = now.getMonth() + 1;
+          const curYear = now.getFullYear();
+
+          if (formData.status === "on_leave" || formData.status === "inactive") {
+            await (supabase.from("salary_records" as any) as any)
+              .update({
+                status: "on_leave",
+                base_salary: 0,
+                allowances: 0,
+                deductions: 0,
+                notes: `Staff marked ${formData.status} in directory`,
+              })
+              .eq("staff_id", editingStaff.id)
+              .eq("month", curMonth)
+              .eq("year", curYear)
+              .eq("status", "pending");
+          } else if (formData.status === "active") {
+            await (supabase.from("salary_records" as any) as any)
+              .update({
+                status: "pending",
+                base_salary: Number(formData.baseSalary),
+                allowances: 0,
+                deductions: 0,
+                notes: "Reactivated to Active in directory",
+              })
+              .eq("staff_id", editingStaff.id)
+              .eq("month", curMonth)
+              .eq("year", curYear)
+              .eq("status", "on_leave");
+          }
+        } catch (syncErr) {
+          console.error("Salary sync on staff status change error:", syncErr);
+        }
+
         setIsModalOpen(false);
         setEditingStaff(null);
       } else if (error) {
@@ -206,42 +245,71 @@ export default function StaffPage() {
   return (
     <PermissionGuard permission="staff">
       <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Users className="w-5 h-5 text-amber-500" />
-            Staff & Workforce Directory (Live Supabase DB)
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Fabricators, installers, site engineers, and field technicians in Tanuku HQ.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={fetchStaff}
-            disabled={loading}
-            className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
-            title="Refresh Staff from Database"
+        {/* Sub-navigation tabs: Staff Directory ↔ Attendance ↔ Salary Records */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl w-fit text-xs font-semibold">
+          <div className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-amber-500" />
+            Staff Directory
+          </div>
+          <Link
+            href="/admin/staff/attendance"
+            className="px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
+            <CalendarCheck className="w-3.5 h-3.5 text-emerald-500" />
+            Daily Attendance & Time
+          </Link>
           <Link
             href="/admin/staff/salaries"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-xs transition border border-slate-300 dark:border-slate-700"
+            className="px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5"
           >
-            <Banknote className="w-4 h-4 text-emerald-500" />
-            Monthly Salaries & Payroll
+            <Banknote className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            Salary Records & Payroll
           </Link>
-          <button
-            onClick={handleOpenAdd}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Add Staff Member
-          </button>
         </div>
-      </div>
+
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-amber-500" />
+              Staff & Workforce Directory (Live Supabase DB)
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Fabricators, installers, site engineers, and field technicians in Tanuku HQ.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchStaff}
+              disabled={loading}
+              className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition cursor-pointer"
+              title="Refresh Staff from Database"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            </button>
+            <Link
+              href="/admin/staff/attendance"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-xs transition border border-slate-300 dark:border-slate-700"
+            >
+              <CalendarCheck className="w-4 h-4 text-emerald-500" />
+              Staff Attendance
+            </Link>
+            <Link
+              href="/admin/staff/salaries"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-xs transition border border-slate-300 dark:border-slate-700"
+            >
+              <Banknote className="w-4 h-4 text-emerald-500" />
+              Salaries & Payroll
+            </Link>
+            <button
+              onClick={handleOpenAdd}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Add Staff Member
+            </button>
+          </div>
+        </div>
 
       {/* Search Bar */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800">

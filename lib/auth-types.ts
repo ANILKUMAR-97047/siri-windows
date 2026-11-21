@@ -6,6 +6,7 @@ export type PermissionKey =
   | "clients"
   | "projects"
   | "staff"
+  | "attendance"
   | "salaries"
   | "stock"
   | "pricing"
@@ -40,6 +41,7 @@ export const ALL_PERMISSIONS: { key: PermissionKey; label: string; description: 
   { key: "clients", label: "Clients & Quotes", description: "Manage customer directory & quotation generation" },
   { key: "projects", label: "Projects Management", description: "Track UPVC/Aluminium fabrication & installation orders" },
   { key: "staff", label: "Staff & Team Directory", description: "Manage workforce, designations, and contact numbers" },
+  { key: "attendance", label: "Staff Attendance & Time", description: "Daily register, check-ins, leaves & overtime hours" },
   { key: "salaries", label: "Salary Records & Payroll", description: "Log monthly disbursements, allowances & deductions" },
   { key: "stock", label: "Stock & Materials", description: "Manage raw inventory, profile bars & hardware count" },
   { key: "pricing", label: "Pricing Packages", description: "Edit sq.ft rates, series specifications & package cards" },

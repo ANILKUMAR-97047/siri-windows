@@ -99,11 +99,13 @@ body {
 }
 
 /* ---- Typography ---- */
-h1, h2, h3, h4, h5, h6 {
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   color: var(--color-navy-950);
   line-height: 1.2;
   letter-spacing: -0.02em;
+  }
 }
 
 /* ---- Selection ---- */

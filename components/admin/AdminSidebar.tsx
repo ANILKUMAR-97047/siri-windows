@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
+  CalendarCheck,
   Banknote,
   Package,
   UserCheck,
@@ -38,6 +39,7 @@ const baseNavigation: NavItem[] = [
   { name: "Clients & Quotes", href: "/admin/clients", icon: UserCheck, permission: "clients" },
   { name: "Projects Management", href: "/admin/projects", icon: Briefcase, permission: "projects" },
   { name: "Staff & Salaries", href: "/admin/staff", icon: Users, permission: "staff" },
+  { name: "Staff Attendance", href: "/admin/staff/attendance", icon: CalendarCheck, permission: "attendance" },
   { name: "Salary Records", href: "/admin/staff/salaries", icon: Banknote, permission: "salaries" },
   { name: "Stock & Materials", href: "/admin/stock", icon: Package, permission: "stock" },
   { name: "Pricing Packages", href: "/admin/pricing", icon: Tag, permission: "pricing" },
