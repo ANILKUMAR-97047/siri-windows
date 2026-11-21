@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, Mail, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
+import { toast } from "@/components/ui/ToastProvider";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -30,18 +31,23 @@ export default function AdminLoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMsg(data.error || "Authentication failed. Please verify your credentials.");
+        const errorText = data.error || "Authentication failed. Please verify your credentials.";
+        setErrorMsg(errorText);
+        toast.error(errorText, "Login Failed");
         setIsLoading(false);
         return;
       }
 
+      toast.success("Welcome back!", "Authentication Successful");
       // Refresh auth state in provider and redirect to dashboard
       await refreshUser();
       router.push("/admin");
       router.refresh();
     } catch (err: unknown) {
       const error = err as Error;
-      setErrorMsg(error?.message || "An unexpected network error occurred.");
+      const errorText = error?.message || "An unexpected network error occurred.";
+      setErrorMsg(errorText);
+      toast.error(errorText, "Login Error");
       setIsLoading(false);
     }
   };

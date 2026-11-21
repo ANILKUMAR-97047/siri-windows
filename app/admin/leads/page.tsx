@@ -16,6 +16,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import { CustomSelect } from "@/components/ui/Select";
 
 function WhatsAppIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
   return (
@@ -184,10 +185,10 @@ export default function LeadsPage() {
           notes: "",
         });
       } else {
-        alert("Error saving lead: " + (json.error || "Unknown error"));
+        showToast("error", "Error saving lead: " + (json.error || "Unknown error"));
       }
     } catch (err: any) {
-      alert("Network error: " + err.message);
+      showToast("error", "Network error: " + err.message);
     }
   };
 
@@ -436,23 +437,22 @@ export default function LeadsPage() {
                     </td>
 
                     {/* Status Dropdown */}
-                    <td className="py-3.5 px-4">
-                      <select
+                    <td className="py-3.5 px-4 min-w-[170px]">
+                      <CustomSelect
                         value={lead.status}
-                        onChange={(e) =>
-                          updateLeadStatus(lead.id, e.target.value as Lead["status"])
+                        onChange={(val) =>
+                          updateLeadStatus(lead.id, val as Lead["status"])
                         }
-                        className={`text-[11px] font-semibold rounded-lg px-2.5 py-1 border border-transparent focus:outline-none focus:ring-1 focus:ring-amber-500 ${
-                          statusBadges[lead.status]?.color || "bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        <option value="new">New Lead</option>
-                        <option value="contacted">Contacted</option>
-                        <option value="site_visit_scheduled">Site Visit Scheduled</option>
-                        <option value="quote_sent">Quote Sent</option>
-                        <option value="won">Won (Convert to Client)</option>
-                        <option value="lost">Lost</option>
-                      </select>
+                        size="sm"
+                        options={[
+                          { value: "new", label: "New Lead" },
+                          { value: "contacted", label: "Contacted" },
+                          { value: "site_visit_scheduled", label: "Site Visit Scheduled" },
+                          { value: "quote_sent", label: "Quote Sent" },
+                          { value: "won", label: "Won (Convert to Client)" },
+                          { value: "lost", label: "Lost" },
+                        ]}
+                      />
                     </td>
 
                     {/* Actions */}
@@ -589,34 +589,36 @@ export default function LeadsPage() {
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
                     Lead Source
                   </label>
-                  <select
+                  <CustomSelect
                     value={newLead.source}
-                    onChange={(e) => setNewLead({ ...newLead, source: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 focus:ring-1 focus:ring-amber-500"
-                  >
-                    <option value="Website">Website</option>
-                    <option value="Phone Inquiry">Phone Inquiry</option>
-                    <option value="Walk-in Showroom">Walk-in Showroom</option>
-                    <option value="Architect Referral">Architect Referral</option>
-                    <option value="Social Media">Social Media</option>
-                  </select>
+                    onChange={(val) => setNewLead({ ...newLead, source: val })}
+                    size="sm"
+                    options={[
+                      { value: "Website", label: "Website" },
+                      { value: "Phone Inquiry", label: "Phone Inquiry" },
+                      { value: "Walk-in Showroom", label: "Walk-in Showroom" },
+                      { value: "Architect Referral", label: "Architect Referral" },
+                      { value: "Social Media", label: "Social Media" },
+                    ]}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
                     Priority Level
                   </label>
-                  <select
+                  <CustomSelect
                     value={newLead.priority}
-                    onChange={(e) =>
-                      setNewLead({ ...newLead, priority: e.target.value as Lead["priority"] })
+                    onChange={(val) =>
+                      setNewLead({ ...newLead, priority: val as Lead["priority"] })
                     }
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 focus:ring-1 focus:ring-amber-500"
-                  >
-                    <option value="urgent">Urgent</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
+                    size="sm"
+                    options={[
+                      { value: "urgent", label: "Urgent" },
+                      { value: "high", label: "High" },
+                      { value: "medium", label: "Medium" },
+                      { value: "low", label: "Low" },
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -625,20 +627,15 @@ export default function LeadsPage() {
                   Window / Door Requirement
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <select
+                  <CustomSelect
                     value={newLead.product_category}
-                    onChange={(e) =>
-                      setNewLead({ ...newLead, product_category: e.target.value })
+                    onChange={(val) =>
+                      setNewLead({ ...newLead, product_category: val })
                     }
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 focus:ring-1 focus:ring-amber-500"
-                  >
-                    <option value="">Select a product</option>
-                    {PRODUCT_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select a product"
+                    size="sm"
+                    options={PRODUCT_OPTIONS}
+                  />
                   <input
                     type="text"
                     value={newLead.custom_requirement}

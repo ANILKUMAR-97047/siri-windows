@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Mail, ArrowRight, AlertCircle, Loader2, CheckCircle2, ArrowLeft, KeyRound } from "lucide-react";
+import { toast } from "@/components/ui/ToastProvider";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -28,15 +29,20 @@ export default function ForgotPasswordPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMsg(data.error || "Failed to process password reset request.");
+        const errText = data.error || "Failed to process password reset request.";
+        setErrorMsg(errText);
+        toast.error(errText, "Request Failed");
         setIsLoading(false);
         return;
       }
 
       setSentEmail(email);
       setIsSuccess(true);
+      toast.success("Password reset email sent!", "Check Your Inbox");
     } catch (err: any) {
-      setErrorMsg(err?.message || "A network error occurred. Please try again.");
+      const errText = err?.message || "A network error occurred. Please try again.";
+      setErrorMsg(errText);
+      toast.error(errText, "Network Error");
     } finally {
       setIsLoading(false);
     }

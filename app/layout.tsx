@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins, Manrope } from "next/font/google";
 import "./globals.css";
 import { siteMeta } from "@/lib/content";
+import { ToastProvider } from "@/components/ui/ToastProvider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -69,7 +70,7 @@ export default function RootLayout({
       className={`${poppins.variable} ${manrope.variable} antialiased`}
     >
       <body className="min-h-screen flex flex-col bg-background text-foreground font-sans">
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

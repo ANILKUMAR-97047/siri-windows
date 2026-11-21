@@ -19,6 +19,8 @@ import {
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
 import { ALL_PERMISSIONS, PermissionKey, AdminUser } from "@/lib/auth-types";
+import { toast } from "@/components/ui/ToastProvider";
+import { CustomSelect } from "@/components/ui/Select";
 
 export default function AdminUsersPage() {
   const { user: currentSuperAdmin, refreshUser } = useAdminAuth();
@@ -138,7 +140,7 @@ export default function AdminUsersPage() {
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.password) {
-      alert("Name, email and password are required.");
+      toast.warning("Name, email and password are required.", "Missing Required Fields");
       return;
     }
 
@@ -152,16 +154,16 @@ export default function AdminUsersPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Failed to create admin user.");
+        toast.error(data.error || "Failed to create admin user.", "Creation Failed");
         return;
       }
 
-      alert("Admin created successfully!");
+      toast.success("Admin account created successfully!");
       setIsAddModalOpen(false);
       fetchUsers();
     } catch (err: unknown) {
       const error = err as Error;
-      alert("Error: " + (error?.message || "Failed to create admin."));
+      toast.error(error?.message || "Failed to create admin.", "Creation Error");
     } finally {
       setSubmitting(false);
     }
@@ -181,11 +183,11 @@ export default function AdminUsersPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Failed to update admin.");
+        toast.error(data.error || "Failed to update admin.", "Update Failed");
         return;
       }
 
-      alert("Admin profile & permissions updated successfully!");
+      toast.success("Admin profile & permissions updated successfully!");
       const isSelf = editingUser.id === currentSuperAdmin?.id;
       setEditingUser(null);
       await fetchUsers();
@@ -194,7 +196,7 @@ export default function AdminUsersPage() {
       }
     } catch (err: unknown) {
       const error = err as Error;
-      alert("Error: " + (error?.message || "Failed to update admin."));
+      toast.error(error?.message || "Failed to update admin.", "Update Error");
     } finally {
       setSubmitting(false);
     }
@@ -211,15 +213,16 @@ export default function AdminUsersPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Failed to delete admin.");
+        toast.error(data.error || "Failed to delete admin.", "Delete Failed");
         return;
       }
 
       setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id));
+      toast.success("Admin user deleted successfully.");
       setDeleteTarget(null);
     } catch (err: unknown) {
       const error = err as Error;
-      alert("Error: " + (error?.message || "Failed to delete admin."));
+      toast.error(error?.message || "Failed to delete admin.", "Delete Error");
     } finally {
       setIsDeleting(false);
     }
@@ -649,16 +652,18 @@ export default function AdminUsersPage() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300">
                       Account Status
                     </label>
-                    <select
+                    <CustomSelect
                       value={editFormData.status}
-                      onChange={(e) =>
-                        setEditFormData({ ...editFormData, status: e.target.value })
+                      onChange={(val) =>
+                        setEditFormData({ ...editFormData, status: val })
                       }
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
-                    >
-                      <option value="active">Active (Access Allowed)</option>
-                      <option value="inactive">Inactive (Access Blocked)</option>
-                    </select>
+                      size="sm"
+                      dark={true}
+                      options={[
+                        { value: "active", label: "Active (Access Allowed)" },
+                        { value: "inactive", label: "Inactive (Access Blocked)" },
+                      ]}
+                    />
                   </div>
 
                   <div className="space-y-1">

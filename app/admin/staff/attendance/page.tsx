@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import AttendancePdfModal from "@/components/admin/AttendancePdfModal";
+import { toast } from "@/components/ui/ToastProvider";
 
 interface StaffMember {
   id: string;
@@ -262,10 +263,11 @@ export default function StaffAttendancePage() {
       });
       setAttendanceMap(map);
       setSavedSuccess(true);
+      toast.success("Marked all staff present!");
       setTimeout(() => setSavedSuccess(false), 3000);
       fetchData();
     } catch (err: any) {
-      alert("Error: " + err.message);
+      toast.error(err.message || "Failed to mark all present", "Attendance Error");
       setErrorMsg(err.message);
     } finally {
       setSaving(false);
@@ -322,10 +324,11 @@ export default function StaffAttendancePage() {
       }
 
       setSavedSuccess(true);
+      toast.success("Attendance roster saved successfully!");
       setTimeout(() => setSavedSuccess(false), 3000);
       fetchData();
     } catch (err: any) {
-      alert("Error saving attendance: " + err.message);
+      toast.error(err.message || "Failed to save attendance", "Attendance Error");
       setErrorMsg(err.message);
     } finally {
       setSaving(false);

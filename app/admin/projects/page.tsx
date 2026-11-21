@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import { CustomSelect } from "@/components/ui/Select";
 
 interface ClientRef {
   id: string;
@@ -508,28 +509,21 @@ export default function ProjectsPage() {
                     </div>
 
                     {/* Status Dropdown */}
-                    <div className="flex items-center gap-2">
-                      <select
+                    <div className="flex items-center gap-2 min-w-[160px]">
+                      <CustomSelect
                         value={p.status}
-                        onChange={(e) =>
-                          updateProjectStatus(p.id, e.target.value as ProjectRecord["status"])
+                        onChange={(val) =>
+                          updateProjectStatus(p.id, val as ProjectRecord["status"])
                         }
-                        className={`text-xs font-bold px-3 py-1.5 rounded-full border border-transparent cursor-pointer uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-amber-500 ${
-                          p.status === "completed"
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                            : p.status === "installation"
-                            ? "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300"
-                            : p.status === "fabrication"
-                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
-                            : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"
-                        }`}
-                      >
-                        <option value="planning">PLANNING</option>
-                        <option value="fabrication">FABRICATION</option>
-                        <option value="installation">INSTALLATION</option>
-                        <option value="completed">COMPLETED</option>
-                        <option value="on_hold">ON HOLD</option>
-                      </select>
+                        size="sm"
+                        options={[
+                          { value: "planning", label: "PLANNING" },
+                          { value: "fabrication", label: "FABRICATION" },
+                          { value: "installation", label: "INSTALLATION" },
+                          { value: "completed", label: "COMPLETED" },
+                          { value: "on_hold", label: "ON HOLD" },
+                        ]}
+                      />
                       <button
                         onClick={() => setDeleteTarget({ id: p.id, title: p.title })}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"

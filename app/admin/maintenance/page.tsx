@@ -14,6 +14,8 @@ import {
   User,
 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import { toast } from "@/components/ui/ToastProvider";
+import { CustomSelect } from "@/components/ui/Select";
 
 interface MaintenanceTask {
   id: string;
@@ -117,6 +119,7 @@ export default function MaintenancePage() {
 
     setTasks([created, ...tasks]);
     setIsModalOpen(false);
+    toast.success("Maintenance task logged successfully!", "Task Created");
     setNewTask({
       category: "Factory Machinery",
       location: "Tanuku Workshop",
@@ -129,6 +132,7 @@ export default function MaintenancePage() {
 
   const updateTaskStatus = (id: string, status: MaintenanceTask["status"]) => {
     setTasks(tasks.map((t) => (t.id === id ? { ...t, status } : t)));
+    toast.info(`Task status updated to ${status.replace("_", " ").toUpperCase()}`);
   };
 
   const filteredTasks = tasks.filter((t) =>
@@ -239,18 +243,19 @@ export default function MaintenancePage() {
                       {t.status.replace("_", " ").toUpperCase()}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-right">
-                    <select
+                  <td className="py-3 px-4 text-right min-w-[140px]">
+                    <CustomSelect
                       value={t.status}
-                      onChange={(e) =>
-                        updateTaskStatus(t.id, e.target.value as MaintenanceTask["status"])
+                      onChange={(val) =>
+                        updateTaskStatus(t.id, val as MaintenanceTask["status"])
                       }
-                      className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                    </select>
+                      size="sm"
+                      options={[
+                        { value: "pending", label: "Pending" },
+                        { value: "in_progress", label: "In Progress" },
+                        { value: "completed", label: "Completed" },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}
@@ -282,16 +287,17 @@ export default function MaintenancePage() {
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
                     Category
                   </label>
-                  <select
+                  <CustomSelect
                     value={newTask.category}
-                    onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2"
-                  >
-                    <option value="Factory Machinery">Factory Machinery</option>
-                    <option value="Site Installation Service">Site Installation Service</option>
-                    <option value="Showroom Maintenance">Showroom Maintenance</option>
-                    <option value="Transport Vehicle">Transport Vehicle</option>
-                  </select>
+                    onChange={(val) => setNewTask({ ...newTask, category: val })}
+                    size="sm"
+                    options={[
+                      { value: "Factory Machinery", label: "Factory Machinery" },
+                      { value: "Site Installation Service", label: "Site Installation Service" },
+                      { value: "Showroom Maintenance", label: "Showroom Maintenance" },
+                      { value: "Transport Vehicle", label: "Transport Vehicle" },
+                    ]}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
@@ -326,36 +332,38 @@ export default function MaintenancePage() {
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
                     Assigned Technician
                   </label>
-                  <select
+                  <CustomSelect
                     value={newTask.assignedTo}
-                    onChange={(e) => setNewTask({ ...newTask, assignedTo: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2"
-                  >
-                    <option value="S. Rambabu">S. Rambabu</option>
-                    <option value="K. Nageswara Rao">K. Nageswara Rao</option>
-                    <option value="P. Venkanna">P. Venkanna</option>
-                    <option value="M. Durga Prasad">M. Durga Prasad</option>
-                  </select>
+                    onChange={(val) => setNewTask({ ...newTask, assignedTo: val })}
+                    size="sm"
+                    options={[
+                      { value: "S. Rambabu", label: "S. Rambabu" },
+                      { value: "K. Nageswara Rao", label: "K. Nageswara Rao" },
+                      { value: "P. Venkanna", label: "P. Venkanna" },
+                      { value: "M. Durga Prasad", label: "M. Durga Prasad" },
+                    ]}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
                     Priority
                   </label>
-                  <select
+                  <CustomSelect
                     value={newTask.priority}
-                    onChange={(e) =>
+                    onChange={(val) =>
                       setNewTask({
                         ...newTask,
-                        priority: e.target.value as MaintenanceTask["priority"],
+                        priority: val as MaintenanceTask["priority"],
                       })
                     }
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2"
-                  >
-                    <option value="low">Low</option>
-                    <option value="normal">Normal</option>
-                    <option value="high">High</option>
-                    <option value="emergency">Emergency</option>
-                  </select>
+                    size="sm"
+                    options={[
+                      { value: "low", label: "Low" },
+                      { value: "normal", label: "Normal" },
+                      { value: "high", label: "High" },
+                      { value: "emergency", label: "Emergency" },
+                    ]}
+                  />
                 </div>
               </div>
 

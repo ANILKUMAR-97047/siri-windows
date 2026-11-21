@@ -80,6 +80,39 @@
   box-sizing: border-box;
 }
 
+/* ============================================================
+   Interactive Cursor Pointer Standards
+   Ensures buttons, links, controls, tabs & clickable items
+   consistently show the pointer cursor across public & admin.
+   ============================================================ */
+button,
+[role="button"],
+a,
+select,
+summary,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"]::file-selector-button,
+label[for],
+[tabindex="0"]:not(input):not(textarea):not(select),
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Disabled states correctly show not-allowed */
+button:disabled,
+[role="button"][aria-disabled="true"],
+input:disabled,
+select:disabled,
+textarea:disabled,
+.cursor-not-allowed,
+[disabled] {
+  cursor: not-allowed !important;
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;

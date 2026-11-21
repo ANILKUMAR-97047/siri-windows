@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import { toast, alertModal } from "@/components/ui/ToastProvider";
+import { CustomSelect } from "@/components/ui/Select";
 
 interface PricingPackage {
   id: string;
@@ -98,7 +100,7 @@ export default function PricingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert("Please enter a package title");
+      toast.warning("Please enter a package title.");
       return;
     }
 
@@ -127,7 +129,7 @@ export default function PricingPage() {
           .select();
 
         if (error) {
-          alert("Error updating package: " + error.message);
+          toast.error("Error updating package: " + error.message);
           return;
         }
 
@@ -139,6 +141,7 @@ export default function PricingPage() {
           );
           setIsModalOpen(false);
           setEditingPkg(null);
+          toast.success("Pricing package updated successfully!");
         }
       } else {
         // Insert new package in Supabase
@@ -161,18 +164,19 @@ export default function PricingPage() {
           .select();
 
         if (error) {
-          alert("Error adding package: " + error.message);
+          toast.error("Error adding package: " + error.message);
           return;
         }
 
         if (data && data[0]) {
           setPackages((prev) => [...prev, data[0] as PricingPackage]);
           setIsModalOpen(false);
+          toast.success("New pricing package created successfully!");
         }
       }
     } catch (err: unknown) {
       const error = err as Error;
-      alert("An unexpected error occurred: " + (error?.message || "Unknown error"));
+      toast.error("An unexpected error occurred: " + (error?.message || "Unknown error"));
     } finally {
       setSubmitting(false);
     }
@@ -195,12 +199,14 @@ export default function PricingPage() {
         .eq("id", targetId);
 
       if (error) {
-        alert("Error deleting package: " + error.message);
+        toast.error("Error deleting package: " + error.message);
         fetchPackages(); // Revert on failure
+      } else {
+        toast.success("Pricing package removed successfully.");
       }
     } catch (err: unknown) {
       const error = err as Error;
-      alert("Error deleting package: " + (error?.message || "Unknown error"));
+      toast.error("Error deleting package: " + (error?.message || "Unknown error"));
       fetchPackages();
     } finally {
       setIsDeleting(false);
@@ -431,16 +437,18 @@ export default function PricingPage() {
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
                     Material Type
                   </label>
-                  <select
+                  <CustomSelect
                     value={formData.materialType}
-                    onChange={(e) =>
-                      setFormData({ ...formData, materialType: e.target.value })
+                    onChange={(val) =>
+                      setFormData({ ...formData, materialType: val })
                     }
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white"
-                  >
-                    <option value="UPVC">UPVC</option>
-                    <option value="Aluminium">Aluminium</option>
-                  </select>
+                    size="sm"
+                    dark={true}
+                    options={[
+                      { value: "UPVC", label: "UPVC" },
+                      { value: "Aluminium", label: "Aluminium" },
+                    ]}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="font-semibold text-slate-700 dark:text-slate-300">

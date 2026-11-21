@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
+import { toast } from "@/components/ui/ToastProvider";
 
 export default function AdminHeader() {
   const pathname = usePathname();
@@ -63,18 +64,23 @@ export default function AdminHeader() {
 
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error || "Failed to update profile.");
+        const errText = data.error || "Failed to update profile.";
+        setErrorMsg(errText);
+        toast.error(errText, "Profile Update Failed");
         setSubmitting(false);
         return;
       }
 
       setSuccessMsg("Account details updated successfully!");
+      toast.success("Account profile and email updated successfully!", "Profile Saved");
       await refreshUser();
       setTimeout(() => {
         setIsProfileOpen(false);
       }, 1200);
     } catch (err: any) {
-      setErrorMsg(err?.message || "A network error occurred.");
+      const errText = err?.message || "A network error occurred.";
+      setErrorMsg(errText);
+      toast.error(errText, "Network Error");
     } finally {
       setSubmitting(false);
     }

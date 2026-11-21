@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import { toast } from "@/components/ui/ToastProvider";
+import { CustomSelect } from "@/components/ui/Select";
 
 interface StaffDetails {
   id: string;
@@ -333,7 +335,7 @@ export default function SalariesPage() {
   const handleRecordSalary = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!salaryForm.staff_id) {
-      alert("Please select a staff member");
+      toast.warning("Please select a staff member to record salary payout.", "Selection Required");
       return;
     }
 
@@ -360,11 +362,12 @@ export default function SalariesPage() {
         .single();
 
       if (error) {
-        alert("Error processing salary: " + error.message);
+        toast.error("Error processing salary: " + error.message, "Payout Error");
         return;
       }
 
       if (data) {
+        toast.success("Salary payout recorded successfully!");
         setRecords((prev) => {
           const filtered = prev.filter((r) => r.id !== data.id);
           return [data as unknown as SalaryRecord, ...filtered];
@@ -373,7 +376,7 @@ export default function SalariesPage() {
       }
     } catch (err: unknown) {
       const error = err as Error;
-      alert("An unexpected error occurred: " + (error?.message || "Unknown error"));
+      toast.error("An unexpected error occurred: " + (error?.message || "Unknown error"), "Payout Failed");
     } finally {
       setSubmitting(false);
     }
@@ -407,8 +410,10 @@ export default function SalariesPage() {
       .eq("id", id);
 
     if (error) {
-      alert("Failed to update status: " + error.message);
+      toast.error("Failed to update status: " + error.message, "Update Failed");
       fetchData();
+    } else {
+      toast.success("Salary marked as PAID successfully!");
     }
   };
 
@@ -443,8 +448,10 @@ export default function SalariesPage() {
       .eq("id", id);
 
     if (error) {
-      alert("Failed to update status: " + error.message);
+      toast.error("Failed to update status: " + error.message, "Update Failed");
       fetchData();
+    } else {
+      toast.info("Staff member marked as ON LEAVE for this month.");
     }
   };
 
@@ -800,37 +807,43 @@ export default function SalariesPage() {
             </div>
 
             {/* Filter by Month */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-[200px]">
               <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <select
+              <CustomSelect
                 value={filterMonth}
-                onChange={(e) => setFilterMonth(e.target.value)}
-                className="w-full text-xs bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              >
-                <option value="all">All Months (Career History)</option>
-                {uniqueMonths.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label} {m.value === currentMonthKey ? "• (Current)" : ""}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setFilterMonth(val)}
+                size="sm"
+                options={[
+                  { value: "all", label: "All Months (Career History)" },
+                  ...uniqueMonths.map((m) => ({
+                    value: m.value,
+                    label: `${m.label}${m.value === currentMonthKey ? " • (Current)" : ""}`,
+                  })),
+                ]}
+              />
             </div>
 
             {/* Filter by Staff Member */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-[220px]">
               <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <select
+              <CustomSelect
                 value={filterStaff}
-                onChange={(e) => setFilterStaff(e.target.value)}
-                className="w-full text-xs bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              >
-                <option value="all">All Staff Members ({staffList.length})</option>
-                {staffList.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.role}) {s.status === "on_leave" ? "• (On Leave)" : s.status === "inactive" ? "• (Inactive)" : ""}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setFilterStaff(val)}
+                size="sm"
+                options={[
+                  { value: "all", label: `All Staff Members (${staffList.length})` },
+                  ...staffList.map((s) => ({
+                    value: s.id,
+                    label: `${s.name} (${s.role})${
+                      s.status === "on_leave"
+                        ? " • (On Leave)"
+                        : s.status === "inactive"
+                        ? " • (Inactive)"
+                        : ""
+                    }`,
+                  })),
+                ]}
+              />
             </div>
           </div>
         </div>
@@ -1111,23 +1124,19 @@ export default function SalariesPage() {
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
                     Select Staff Member *
                   </label>
-                  <select
+                  <CustomSelect
                     value={salaryForm.staff_id}
-                    onChange={(e) => handleStaffSelect(e.target.value)}
-                    required
+                    onChange={(val) => handleStaffSelect(val)}
                     disabled={modalMode === "pay"}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-800 dark:text-slate-100 disabled:opacity-75"
-                  >
-                    {staffList.length === 0 ? (
-                      <option value="">No active staff found in database</option>
-                    ) : (
-                      staffList.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} ({s.role}) {s.join_date ? `• Joined ${formatDate(s.join_date)}` : ""}
-                        </option>
-                      ))
-                    )}
-                  </select>
+                    placeholder="Choose staff member..."
+                    size="sm"
+                    options={staffList.map((s) => ({
+                      value: s.id,
+                      label: `${s.name} (${s.role})${
+                        s.join_date ? ` • Joined ${formatDate(s.join_date)}` : ""
+                      }`,
+                    }))}
+                  />
                 </div>
 
                 {/* Month and Year */}
@@ -1136,20 +1145,18 @@ export default function SalariesPage() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300">
                       Salary Month
                     </label>
-                    <select
-                      value={salaryForm.month}
-                      onChange={(e) =>
-                        setSalaryForm({ ...salaryForm, month: Number(e.target.value) })
+                    <CustomSelect
+                      value={String(salaryForm.month)}
+                      onChange={(val) =>
+                        setSalaryForm({ ...salaryForm, month: Number(val) })
                       }
                       disabled={modalMode === "pay"}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-800 dark:text-slate-100 disabled:opacity-75"
-                    >
-                      {MONTH_NAMES.map((name, i) => (
-                        <option key={name} value={i + 1}>
-                          {name}
-                        </option>
-                      ))}
-                    </select>
+                      size="sm"
+                      options={MONTH_NAMES.map((name, i) => ({
+                        value: String(i + 1),
+                        label: name,
+                      }))}
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="font-semibold text-slate-700 dark:text-slate-300">
@@ -1202,18 +1209,19 @@ export default function SalariesPage() {
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
                     Payment Method *
                   </label>
-                  <select
+                  <CustomSelect
                     value={salaryForm.paymentMode}
-                    onChange={(e) =>
-                      setSalaryForm({ ...salaryForm, paymentMode: e.target.value })
+                    onChange={(val) =>
+                      setSalaryForm({ ...salaryForm, paymentMode: val })
                     }
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-800 dark:text-slate-100"
-                  >
-                    <option value="UPI / PhonePe">UPI / PhonePe / GPay</option>
-                    <option value="Bank Transfer">Bank Transfer (NEFT/IMPS)</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Cheque">Cheque</option>
-                  </select>
+                    size="sm"
+                    options={[
+                      { value: "UPI / PhonePe", label: "UPI / PhonePe / GPay" },
+                      { value: "Bank Transfer", label: "Bank Transfer (NEFT/IMPS)" },
+                      { value: "Cash", label: "Cash" },
+                      { value: "Cheque", label: "Cheque" },
+                    ]}
+                  />
                 </div>
 
                 {/* Optional Notes */}

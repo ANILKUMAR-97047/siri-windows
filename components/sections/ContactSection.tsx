@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Phone, MapPin, Clock, Mail, Send, CheckCircle, Loader2 } from "lucide-react";
+import { Phone, MapPin, Clock, Mail, Send, CheckCircle, Loader2, ChevronDown } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import { useContent } from "@/components/providers/LanguageProvider";
+import { toast } from "@/components/ui/ToastProvider";
+import { CustomSelect } from "@/components/ui/Select";
 
 interface FormData {
   name: string;
@@ -34,15 +36,18 @@ export default function ContactSection() {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
 
     if (!formData.name.trim()) newErrors.name = contactLabels.requiredName;
+
+    const cleanPhone = formData.phone.replace(/[\s\-\(\)\+]/g, "").replace(/^91/, "");
     if (!formData.phone.trim()) {
       newErrors.phone = contactLabels.requiredPhone;
-    } else if (!/^[0-9]{10}$/.test(formData.phone.replace(/\s/g, ""))) {
+    } else if (!/^[0-9]{10}$/.test(cleanPhone)) {
       newErrors.phone = contactLabels.invalidPhone;
     }
+
     if (!formData.location.trim()) {
       newErrors.location = contactLabels.requiredLocation;
     }
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = contactLabels.invalidEmail;
     }
     if (!formData.message.trim()) newErrors.message = contactLabels.requiredMessage;
@@ -53,9 +58,11 @@ export default function ContactSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (status === "submitting" || status === "success") return;
     if (!validate()) return;
 
     setStatus("submitting");
+    setErrors({});
 
     try {
       const res = await fetch("/api/contact", {
@@ -66,12 +73,28 @@ export default function ContactSection() {
 
       if (res.ok) {
         setStatus("success");
+        setErrors({});
         setFormData({ name: "", phone: "", location: "", email: "", product: "", message: "" });
+        toast.success(
+          "Thank you! Your inquiry has been submitted. Our team will contact you shortly.",
+          "Inquiry Received"
+        );
+        setTimeout(() => {
+          setStatus("idle");
+        }, 5000);
       } else {
         setStatus("error");
+        toast.error("Failed to submit inquiry. Please try again or call us directly.", "Submission Failed");
+        setTimeout(() => {
+          setStatus("idle");
+        }, 4000);
       }
     } catch {
       setStatus("error");
+      toast.error("Network error while submitting inquiry. Please try again.", "Error");
+      setTimeout(() => {
+        setStatus("idle");
+      }, 4000);
     }
   };
 
@@ -81,7 +104,14 @@ export default function ContactSection() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name as keyof FormData]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[name as keyof FormData];
+        return next;
+      });
+    }
+    if (status !== "idle" && status !== "submitting") {
+      setStatus("idle");
     }
   };
 
@@ -113,108 +143,129 @@ export default function ContactSection() {
               noValidate
             >
               {/* Name */}
-              <div className="floating-label-group">
+              <div className="space-y-1.5">
+                <label htmlFor="contact-name" className="block text-xs font-semibold text-slate-700">
+                  {contactLabels.name}
+                </label>
                 <input
                   type="text"
                   name="name"
                   id="contact-name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder=" "
+                  placeholder="e.g. Ramesh Varma"
                   required
-                  className={errors.name ? "!border-red-400" : ""}
+                  className={`w-full px-4 py-3 rounded-xl border bg-off-white text-navy-950 text-sm focus:outline-none focus:border-navy-600 focus:ring-2 focus:ring-navy-600/10 transition placeholder:text-slate-400 ${
+                    errors.name ? "border-red-400 bg-red-50/20" : "border-blue-200"
+                  }`}
                 />
-                <label htmlFor="contact-name">{contactLabels.name}</label>
                 {errors.name && (
                   <p className="text-red-500 text-xs mt-1">{errors.name}</p>
                 )}
               </div>
 
               {/* Phone */}
-              <div className="floating-label-group">
+              <div className="space-y-1.5">
+                <label htmlFor="contact-phone" className="block text-xs font-semibold text-slate-700">
+                  {contactLabels.phone}
+                </label>
                 <input
                   type="tel"
                   name="phone"
                   id="contact-phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder=" "
+                  placeholder="10-digit mobile number (e.g. 98491 23456)"
                   required
-                  className={errors.phone ? "!border-red-400" : ""}
+                  className={`w-full px-4 py-3 rounded-xl border bg-off-white text-navy-950 text-sm focus:outline-none focus:border-navy-600 focus:ring-2 focus:ring-navy-600/10 transition placeholder:text-slate-400 ${
+                    errors.phone ? "border-red-400 bg-red-50/20" : "border-blue-200"
+                  }`}
                 />
-                <label htmlFor="contact-phone">{contactLabels.phone}</label>
                 {errors.phone && (
                   <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
                 )}
               </div>
 
               {/* Location / City */}
-              <div className="floating-label-group">
+              <div className="space-y-1.5">
+                <label htmlFor="contact-location" className="block text-xs font-semibold text-slate-700">
+                  {contactLabels.location}
+                </label>
                 <input
                   type="text"
                   name="location"
                   id="contact-location"
                   value={formData.location}
                   onChange={handleChange}
-                  placeholder=" "
+                  placeholder="e.g. Tanuku, Bhimavaram, Tadepalligudem"
                   required
-                  className={errors.location ? "!border-red-400" : ""}
+                  className={`w-full px-4 py-3 rounded-xl border bg-off-white text-navy-950 text-sm focus:outline-none focus:border-navy-600 focus:ring-2 focus:ring-navy-600/10 transition placeholder:text-slate-400 ${
+                    errors.location ? "border-red-400 bg-red-50/20" : "border-blue-200"
+                  }`}
                 />
-                <label htmlFor="contact-location">{contactLabels.location}</label>
                 {errors.location && (
                   <p className="text-red-500 text-xs mt-1">{errors.location}</p>
                 )}
               </div>
 
               {/* Email */}
-              <div className="floating-label-group">
+              <div className="space-y-1.5">
+                <label htmlFor="contact-email" className="block text-xs font-semibold text-slate-700">
+                  {contactLabels.email}
+                </label>
                 <input
                   type="email"
                   name="email"
                   id="contact-email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder=" "
-                  className={errors.email ? "!border-red-400" : ""}
+                  placeholder="yourname@gmail.com (optional)"
+                  className={`w-full px-4 py-3 rounded-xl border bg-off-white text-navy-950 text-sm focus:outline-none focus:border-navy-600 focus:ring-2 focus:ring-navy-600/10 transition placeholder:text-slate-400 ${
+                    errors.email ? "border-red-400 bg-red-50/20" : "border-blue-200"
+                  }`}
                 />
-                <label htmlFor="contact-email">{contactLabels.email}</label>
                 {errors.email && (
                   <p className="text-red-500 text-xs mt-1">{errors.email}</p>
                 )}
               </div>
 
               {/* Product Interest */}
-              <div className="floating-label-group">
-                <select
-                  name="product"
+              <div className="space-y-1.5">
+                <label htmlFor="contact-product" className="block text-xs font-semibold text-slate-700">
+                  {contactLabels.product}
+                </label>
+                <CustomSelect
                   id="contact-product"
+                  name="product"
                   value={formData.product}
-                  onChange={handleChange}
-                  className="appearance-none"
-                >
-                  <option value="">{contactLabels.productPlaceholder}</option>
-                  {contactFormContent.productOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-                <label htmlFor="contact-product">{contactLabels.product}</label>
+                  onChange={(val) => {
+                    setFormData((prev) => ({ ...prev, product: val }));
+                    if (status !== "idle" && status !== "submitting") {
+                      setStatus("idle");
+                    }
+                  }}
+                  placeholder={contactLabels.productPlaceholder}
+                  options={contactFormContent.productOptions}
+                />
               </div>
 
               {/* Message */}
-              <div className="floating-label-group">
+              <div className="space-y-1.5">
+                <label htmlFor="contact-message" className="block text-xs font-semibold text-slate-700">
+                  {contactLabels.message}
+                </label>
                 <textarea
                   name="message"
                   id="contact-message"
                   value={formData.message}
                   onChange={handleChange}
-                  placeholder=" "
+                  placeholder="Describe your window or door requirements, sizes, site details, or special requests..."
                   rows={4}
                   required
-                  className={`resize-none ${errors.message ? "!border-red-400" : ""}`}
+                  className={`w-full px-4 py-3 rounded-xl border bg-off-white text-navy-950 text-sm focus:outline-none focus:border-navy-600 focus:ring-2 focus:ring-navy-600/10 transition resize-none placeholder:text-slate-400 ${
+                    errors.message ? "border-red-400 bg-red-50/20" : "border-blue-200"
+                  }`}
                 />
-                <label htmlFor="contact-message">{contactLabels.message}</label>
                 {errors.message && (
                   <p className="text-red-500 text-xs mt-1">{errors.message}</p>
                 )}
@@ -223,8 +274,14 @@ export default function ContactSection() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={status === "submitting"}
-                className="w-full inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg bg-navy-900 text-white hover:bg-navy-800 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 min-h-[44px]"
+                disabled={status === "submitting" || status === "success"}
+                className={`w-full inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold rounded-lg transition-all duration-200 min-h-[48px] ${
+                  status === "success"
+                    ? "bg-emerald-600 text-white cursor-default shadow-md"
+                    : status === "error"
+                    ? "bg-red-600 text-white"
+                    : "bg-navy-900 text-white hover:bg-navy-800 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+                }`}
               >
                 {status === "submitting" ? (
                   <>
@@ -243,6 +300,16 @@ export default function ContactSection() {
                   </>
                 )}
               </button>
+
+              {status === "success" && (
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2.5">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div>
+                    <span className="font-bold block text-emerald-900">Inquiry Sent Successfully!</span>
+                    <span>Our engineering team in Tanuku will contact you shortly.</span>
+                  </div>
+                </div>
+              )}
 
               {status === "error" && (
                 <p className="text-red-500 text-sm text-center">

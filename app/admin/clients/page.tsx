@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import { CustomSelect } from "@/components/ui/Select";
 
 interface StaffRef {
   id: string;
@@ -1223,39 +1224,41 @@ export default function ClientsPage() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300">
                       Project Type
                     </label>
-                    <select
+                    <CustomSelect
                       value={projectForm.project_type}
-                      onChange={(e) =>
-                        setProjectForm({ ...projectForm, project_type: e.target.value })
+                      onChange={(val) =>
+                        setProjectForm({ ...projectForm, project_type: val })
                       }
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white"
-                    >
-                      <option value="Residential Villa">Residential Villa</option>
-                      <option value="Commercial / Residential">Commercial / Residential</option>
-                      <option value="Apartment Complex">Apartment Complex</option>
-                      <option value="Hospital / Clinic">Hospital / Clinic</option>
-                      <option value="Showroom / Retail">Showroom / Retail</option>
-                    </select>
+                      size="sm"
+                      options={[
+                        { value: "Residential Villa", label: "Residential Villa" },
+                        { value: "Commercial / Residential", label: "Commercial / Residential" },
+                        { value: "Apartment Complex", label: "Apartment Complex" },
+                        { value: "Hospital / Clinic", label: "Hospital / Clinic" },
+                        { value: "Showroom / Retail", label: "Showroom / Retail" },
+                      ]}
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="font-semibold text-slate-700 dark:text-slate-300">
                       Initial Status
                     </label>
-                    <select
+                    <CustomSelect
                       value={projectForm.status}
-                      onChange={(e) =>
+                      onChange={(val) =>
                         setProjectForm({
                           ...projectForm,
-                          status: e.target.value as "planning" | "fabrication" | "installation" | "completed",
+                          status: val as "planning" | "fabrication" | "installation" | "completed",
                         })
                       }
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white"
-                    >
-                      <option value="planning">Planning</option>
-                      <option value="fabrication">Fabrication</option>
-                      <option value="installation">Installation</option>
-                      <option value="completed">Completed</option>
-                    </select>
+                      size="sm"
+                      options={[
+                        { value: "planning", label: "Planning" },
+                        { value: "fabrication", label: "Fabrication" },
+                        { value: "installation", label: "Installation" },
+                        { value: "completed", label: "Completed" },
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -1300,21 +1303,22 @@ export default function ClientsPage() {
                     </span>
                     <span className="text-[10px] text-slate-400 font-normal">Optional</span>
                   </label>
-                  <select
+                  <CustomSelect
                     value={projectForm.supervisor_id}
-                    onChange={(e) =>
-                      setProjectForm({ ...projectForm, supervisor_id: e.target.value })
+                    onChange={(val) =>
+                      setProjectForm({ ...projectForm, supervisor_id: val })
                     }
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white"
-                  >
-                    <option value="">-- Select Site Supervisor --</option>
-                    {staffList.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.role})
-                      </option>
-                    ))}
-                    <option value="custom">+ Type New Supervisor Name...</option>
-                  </select>
+                    placeholder="-- Select Site Supervisor --"
+                    size="sm"
+                    options={[
+                      { value: "", label: "-- Select Site Supervisor --" },
+                      ...staffList.map((s) => ({
+                        value: s.id,
+                        label: `${s.name} (${s.role})`,
+                      })),
+                      { value: "custom", label: "+ Type New Supervisor Name..." },
+                    ]}
+                  />
                   {projectForm.supervisor_id === "custom" && (
                     <input
                       type="text"
@@ -1679,40 +1683,42 @@ export default function ClientsPage() {
                     <label className="font-semibold text-slate-700 dark:text-slate-300">
                       Source
                     </label>
-                    <select
+                    <CustomSelect
                       value={clientForm.source}
-                      onChange={(e) =>
-                        setClientForm({ ...clientForm, source: e.target.value })
+                      onChange={(val) =>
+                        setClientForm({ ...clientForm, source: val })
                       }
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white"
-                    >
-                      <option value="Walk-in">Walk-in</option>
-                      <option value="Website">Website</option>
-                      <option value="Referral">Referral</option>
-                      <option value="Architect Partner">Architect Partner</option>
-                      <option value="Phone">Phone</option>
-                      <option value="Social Media">Social Media</option>
-                    </select>
+                      size="sm"
+                      options={[
+                        { value: "Walk-in", label: "Walk-in" },
+                        { value: "Website", label: "Website" },
+                        { value: "Referral", label: "Referral" },
+                        { value: "Architect Partner", label: "Architect Partner" },
+                        { value: "Phone", label: "Phone" },
+                        { value: "Social Media", label: "Social Media" },
+                      ]}
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="font-semibold text-slate-700 dark:text-slate-300">
                       Client Status
                     </label>
-                    <select
+                    <CustomSelect
                       value={clientForm.status}
-                      onChange={(e) =>
+                      onChange={(val) =>
                         setClientForm({
                           ...clientForm,
-                          status: e.target.value as "active" | "completed" | "prospect" | "inactive",
+                          status: val as "active" | "completed" | "prospect" | "inactive",
                         })
                       }
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white"
-                    >
-                      <option value="active">Active</option>
-                      <option value="prospect">Prospect</option>
-                      <option value="completed">Completed</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
+                      size="sm"
+                      options={[
+                        { value: "active", label: "Active" },
+                        { value: "prospect", label: "Prospect" },
+                        { value: "completed", label: "Completed" },
+                        { value: "inactive", label: "Inactive" },
+                      ]}
+                    />
                   </div>
                 </div>
 

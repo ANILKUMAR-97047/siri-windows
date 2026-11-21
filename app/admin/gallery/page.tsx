@@ -12,6 +12,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import { toast, confirmModal } from "@/components/ui/ToastProvider";
+import { CustomSelect } from "@/components/ui/Select";
 
 interface GalleryItem {
   id: string;
@@ -84,19 +86,35 @@ export default function GalleryPage() {
       src: "",
       isFeatured: false,
     });
+    toast.success("Photo added to website gallery successfully!");
   };
 
   const toggleFeatured = (id: string) => {
+    let nowFeatured = false;
     setItems(
-      items.map((img) =>
-        img.id === id ? { ...img, isFeatured: !img.isFeatured } : img
-      )
+      items.map((img) => {
+        if (img.id === id) {
+          nowFeatured = !img.isFeatured;
+          return { ...img, isFeatured: nowFeatured };
+        }
+        return img;
+      })
     );
+    toast.info(nowFeatured ? "Marked as Featured in Gallery." : "Removed from Featured list.");
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Remove this photo from the website gallery?")) {
+  const handleDelete = async (id: string) => {
+    const confirmed = await confirmModal({
+      title: "Remove Photo from Gallery?",
+      message: "Are you sure you want to remove this photograph from the website gallery display?",
+      type: "danger",
+      confirmText: "Delete Photo",
+      cancelText: "Keep Photo",
+    });
+
+    if (confirmed) {
       setItems(items.filter((img) => img.id !== id));
+      toast.success("Photo removed from gallery.");
     }
   };
 
@@ -236,21 +254,23 @@ export default function GalleryPage() {
                 <label className="font-semibold text-slate-700 dark:text-slate-300">
                   Category
                 </label>
-                <select
+                <CustomSelect
                   value={newItem.category}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setNewItem({
                       ...newItem,
-                      category: e.target.value as GalleryItem["category"],
+                      category: val as GalleryItem["category"],
                     })
                   }
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2"
-                >
-                  <option value="windows">Windows</option>
-                  <option value="doors">Doors</option>
-                  <option value="residential">Residential</option>
-                  <option value="commercial">Commercial</option>
-                </select>
+                  size="sm"
+                  dark={true}
+                  options={[
+                    { value: "windows", label: "Windows" },
+                    { value: "doors", label: "Doors" },
+                    { value: "residential", label: "Residential" },
+                    { value: "commercial", label: "Commercial" },
+                  ]}
+                />
               </div>
 
               <div className="space-y-1">

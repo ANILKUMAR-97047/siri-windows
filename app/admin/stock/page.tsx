@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import { toast } from "@/components/ui/ToastProvider";
+import { CustomSelect } from "@/components/ui/Select";
 
 interface Material {
   id: string;
@@ -89,6 +91,7 @@ export default function StockPage() {
 
     if (!error && data) {
       setMaterials([data[0], ...materials]);
+      toast.success("New material added to inventory successfully!");
       setIsNewItemModal(false);
       setNewItem({
         name: "",
@@ -100,7 +103,7 @@ export default function StockPage() {
         supplier: "Local Distributor",
       });
     } else if (error) {
-      alert("Error adding material: " + error.message);
+      toast.error("Error adding material: " + error.message, "Stock Error");
     }
   };
 
@@ -108,6 +111,10 @@ export default function StockPage() {
     if (!transactionModal.material) return;
     const { material, type } = transactionModal;
     const qty = Number(transactionQty);
+    if (!qty || qty <= 0) {
+      toast.warning("Please enter a valid quantity greater than 0");
+      return;
+    }
     const newStock =
       type === "IN" ? material.current_stock + qty : Math.max(0, material.current_stock - qty);
 
@@ -132,6 +139,7 @@ export default function StockPage() {
       },
     ]);
 
+    toast.success(`Inventory updated: ${type} ${qty} ${material.unit} recorded!`);
     setTransactionModal({ open: false, type: "IN" });
   };
 
@@ -400,17 +408,19 @@ export default function StockPage() {
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
                     Unit of Measurement
                   </label>
-                  <select
+                  <CustomSelect
                     value={newItem.unit}
-                    onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2"
-                  >
-                    <option value="meters">Meters</option>
-                    <option value="sheets">Sheets</option>
-                    <option value="pieces">Pieces</option>
-                    <option value="pairs">Pairs</option>
-                    <option value="boxes">Boxes</option>
-                  </select>
+                    onChange={(val) => setNewItem({ ...newItem, unit: val })}
+                    size="sm"
+                    dark={true}
+                    options={[
+                      { value: "meters", label: "Meters" },
+                      { value: "sheets", label: "Sheets" },
+                      { value: "pieces", label: "Pieces" },
+                      { value: "pairs", label: "Pairs" },
+                      { value: "boxes", label: "Boxes" },
+                    ]}
+                  />
                 </div>
               </div>
 

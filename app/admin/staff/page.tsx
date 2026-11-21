@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import { toast } from "@/components/ui/ToastProvider";
+import { CustomSelect } from "@/components/ui/Select";
 
 interface StaffMember {
   id: string;
@@ -128,11 +130,12 @@ export default function StaffPage() {
       const json = await res.json();
       if (json.success && json.url) {
         setFormData((prev) => ({ ...prev, photo_url: json.url }));
+        toast.success("Profile photo uploaded successfully!");
       } else {
-        alert("Failed to upload image: " + (json.error || "Unknown error"));
+        toast.error(json.error || "Failed to upload image", "Upload Failed");
       }
     } catch (err: any) {
-      alert("Error uploading image: " + err.message);
+      toast.error(err.message || "Error uploading image", "Upload Error");
     } finally {
       setIsUploading(false);
     }
@@ -203,10 +206,11 @@ export default function StaffPage() {
           console.error("Salary sync on staff status change error:", syncErr);
         }
 
+        toast.success("Staff profile updated successfully!");
         setIsModalOpen(false);
         setEditingStaff(null);
       } else if (error) {
-        alert("Error updating staff member: " + error.message);
+        toast.error("Error updating staff member: " + error.message, "Update Failed");
       }
     } else {
       // Insert new staff member to Supabase
@@ -227,9 +231,10 @@ export default function StaffPage() {
 
       if (!error && data) {
         setStaffList([data[0] as unknown as StaffMember, ...staffList]);
+        toast.success("New staff member added successfully!");
         setIsModalOpen(false);
       } else if (error) {
-        alert("Error adding staff member: " + error.message);
+        toast.error("Error adding staff member: " + error.message, "Creation Failed");
       }
     }
   };
@@ -531,30 +536,34 @@ export default function StaffPage() {
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
                     Department
                   </label>
-                  <select
+                  <CustomSelect
                     value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 focus:ring-1 focus:ring-amber-500"
-                  >
-                    <option value="Workshop / Factory">Workshop / Factory</option>
-                    <option value="Field Installation">Field Installation</option>
-                    <option value="Operations">Operations</option>
-                    <option value="Sales & Marketing">Sales & Marketing</option>
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, department: val })}
+                    size="sm"
+                    dark={true}
+                    options={[
+                      { value: "Workshop / Factory", label: "Workshop / Factory" },
+                      { value: "Field Installation", label: "Field Installation" },
+                      { value: "Operations", label: "Operations" },
+                      { value: "Sales & Marketing", label: "Sales & Marketing" },
+                    ]}
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
                     Employment Status
                   </label>
-                  <select
+                  <CustomSelect
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 focus:ring-1 focus:ring-amber-500"
-                  >
-                    <option value="active">Active</option>
-                    <option value="on_leave">On Leave</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, status: val })}
+                    size="sm"
+                    dark={true}
+                    options={[
+                      { value: "active", label: "Active" },
+                      { value: "on_leave", label: "On Leave" },
+                      { value: "inactive", label: "Inactive" },
+                    ]}
+                  />
                 </div>
               </div>
 

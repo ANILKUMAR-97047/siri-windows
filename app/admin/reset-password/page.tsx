@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   XCircle,
 } from "lucide-react";
+import { toast } from "@/components/ui/ToastProvider";
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -103,14 +104,19 @@ function ResetPasswordForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMsg(data.error || "Failed to update password.");
+        const errText = data.error || "Failed to update password.";
+        setErrorMsg(errText);
+        toast.error(errText, "Reset Failed");
         setSubmitting(false);
         return;
       }
 
       setIsSuccess(true);
+      toast.success("Password updated successfully! You can now sign in.", "Success");
     } catch (err: any) {
-      setErrorMsg(err?.message || "A network error occurred. Please try again.");
+      const errText = err?.message || "A network error occurred. Please try again.";
+      setErrorMsg(errText);
+      toast.error(errText, "Network Error");
     } finally {
       setSubmitting(false);
     }

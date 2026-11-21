@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
+import { toast } from "@/components/ui/ToastProvider";
 
 export default function WebsiteContentPage() {
   const [activeTab, setActiveTab] = useState<"hero" | "contact" | "stats" | "about">("hero");
@@ -95,13 +96,18 @@ export default function WebsiteContentPage() {
         }),
       });
 
-      // Show success
-      setIsSaving(false);
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 4000);
+      if (res.ok) {
+        setIsSaving(false);
+        setIsSaved(true);
+        toast.success("Website content saved and published to live website!", "Content Published");
+        setTimeout(() => setIsSaved(false), 4000);
+      } else {
+        setIsSaving(false);
+        toast.error("Failed to save website content. Please try again.", "Save Failed");
+      }
     } catch {
       setIsSaving(false);
-      setIsSaved(true);
+      toast.error("Network error while saving content.", "Save Error");
     }
   };
 
