@@ -107,7 +107,10 @@ export default function AttendancePdfModal({
   // Mobile Responsiveness & Zoom States
   const [viewMode, setViewMode] = useState<"fit" | "full">("fit");
   const [zoomLevel, setZoomLevel] = useState<number>(1);
-  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [containerWidth, setContainerWidth] = useState<number>(() => {
+    if (typeof window !== "undefined") return window.innerWidth;
+    return 760;
+  });
   const [sheetHeight, setSheetHeight] = useState<number>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -119,6 +122,8 @@ export default function AttendancePdfModal({
     const updateDimensions = () => {
       if (containerRef.current) {
         setContainerWidth(containerRef.current.clientWidth);
+      } else if (typeof window !== "undefined") {
+        setContainerWidth(window.innerWidth);
       }
       if (sheetRef.current) {
         setSheetHeight(sheetRef.current.offsetHeight || sheetRef.current.scrollHeight);
@@ -126,6 +131,8 @@ export default function AttendancePdfModal({
     };
 
     updateDimensions();
+    const rafId = requestAnimationFrame(updateDimensions);
+    const timer = setTimeout(updateDimensions, 100);
 
     const ro = new ResizeObserver(() => {
       updateDimensions();
@@ -136,15 +143,17 @@ export default function AttendancePdfModal({
 
     window.addEventListener("resize", updateDimensions);
     return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timer);
       ro.disconnect();
       window.removeEventListener("resize", updateDimensions);
     };
   }, [mode, selectedDate, staffMember]);
 
   // Determine scaling for mobile / narrow viewports
-  const paddingX = containerWidth < 640 ? 16 : 32;
-  const availableWidth = containerWidth > 0 ? containerWidth - paddingX : DOCUMENT_WIDTH;
-  const isNarrowScreen = containerWidth > 0 && containerWidth < DOCUMENT_WIDTH + 40;
+  const paddingX = containerWidth < 640 ? 12 : 32;
+  const availableWidth = Math.max(280, containerWidth - paddingX);
+  const isNarrowScreen = containerWidth > 0 && containerWidth < DOCUMENT_WIDTH + 20;
 
   const fitScale = useMemo(() => {
     if (!isNarrowScreen) return 1;
@@ -469,10 +478,10 @@ export default function AttendancePdfModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-1.5 sm:p-4 md:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-1 sm:p-4 md:p-6 overflow-y-auto">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl sm:rounded-2xl max-w-4xl w-full max-h-[96vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Modal Top Control Bar */}
-        <div className="p-3 sm:p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 shrink-0 space-y-2 sm:space-y-0">
+        <div className="p-2.5 sm:p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 shrink-0 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0">
@@ -493,12 +502,12 @@ export default function AttendancePdfModal({
             <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={handlePrint}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-sm cursor-pointer whitespace-nowrap active:scale-95"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-sm cursor-pointer whitespace-nowrap active:scale-95 shrink-0"
                 title="Print or Save official PDF"
               >
-                <Printer className="w-3.5 h-3.5" />
+                <Printer className="w-3.5 h-3.5 shrink-0" />
                 <span className="hidden sm:inline">Print / Save as PDF</span>
-                <span className="sm:hidden">Print PDF</span>
+                <span className="sm:hidden text-[11px]">Print PDF</span>
               </button>
               <button
                 onClick={onClose}
@@ -512,7 +521,7 @@ export default function AttendancePdfModal({
 
           {/* Narrow / Mobile Screen View Mode Switcher */}
           {isNarrowScreen && (
-            <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-xs">
               <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-700/80 p-0.5 rounded-lg">
                 <button
                   type="button"
@@ -539,17 +548,19 @@ export default function AttendancePdfModal({
                   }`}
                 >
                   <ZoomIn className="w-3 h-3" />
-                  100% Size
+                  100% (Pan)
                 </button>
               </div>
 
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                 {viewMode === "fit" ? (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                    ✓ Fitted to Mobile
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                    ✓ Scaled to fit mobile screen
                   </span>
                 ) : (
-                  <span>← Swipe horizontally to pan →</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                    ← Swipe horizontally to pan →
+                  </span>
                 )}
               </div>
             </div>
@@ -559,7 +570,7 @@ export default function AttendancePdfModal({
         {/* Modal Printable Sheet Container */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-auto p-2 sm:p-6 bg-slate-100 dark:bg-slate-950/40 relative"
+          className="flex-1 overflow-x-auto overflow-y-auto p-1.5 sm:p-6 bg-slate-100 dark:bg-slate-950/40 relative touch-pan-x touch-pan-y"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
           <div
@@ -567,7 +578,11 @@ export default function AttendancePdfModal({
               effectiveScale < 1
                 ? {
                     width: `${Math.ceil(DOCUMENT_WIDTH * effectiveScale)}px`,
-                    height: sheetHeight > 0 ? `${Math.ceil(sheetHeight * effectiveScale)}px` : undefined,
+                    height:
+                      sheetHeight > 0
+                        ? `${Math.ceil(sheetHeight * effectiveScale) + 24}px`
+                        : "auto",
+                    minHeight: "450px",
                     margin: "0 auto",
                     position: "relative",
                     flexShrink: 0,
@@ -597,7 +612,7 @@ export default function AttendancePdfModal({
                       width: `${DOCUMENT_WIDTH}px`,
                     }
               }
-              className="bg-white text-slate-900 p-6 sm:p-8 rounded-xl shadow-md border border-slate-200/80"
+              className="bg-white text-slate-900 p-4 sm:p-8 rounded-xl shadow-md border border-slate-200/80"
             >
             {/* Report Header & Letterhead */}
             <div className="header-box pb-3 mb-4 border-b-2 border-slate-900 flex justify-between items-start">

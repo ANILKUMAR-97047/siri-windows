@@ -23,7 +23,17 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { hero, contact, stats, about } = body;
+    const {
+      hero,
+      contact,
+      stats,
+      about,
+      products,
+      testimonials,
+      cta,
+      why_us,
+      process,
+    } = body;
 
     const supabase = getAdminClient();
 
@@ -32,6 +42,11 @@ export async function POST(request: Request) {
       { section: "contact", content: contact },
       { section: "stats", content: stats },
       { section: "about", content: about },
+      { section: "products", content: products },
+      { section: "testimonials", content: testimonials },
+      { section: "cta", content: cta },
+      { section: "why_us", content: why_us },
+      { section: "process", content: process },
     ].filter((item) => item.content !== undefined);
 
     for (const item of updates) {

@@ -113,13 +113,7 @@ export default function Footer() {
             © {currentYear} {siteMeta.parentBrand}. {footerContent.rights}
           </p>
           <div className="flex items-center gap-4 text-sm font-medium text-white/50">
-            <Link
-              href="/admin"
-              className="text-white/40 hover:text-gold-400 transition-colors text-xs"
-            >
-              Admin Portal
-            </Link>
-            <span>•</span>
+
             <p>
               Designed &amp; Developed by{" "}
               <a

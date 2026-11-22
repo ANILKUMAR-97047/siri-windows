@@ -23,25 +23,31 @@ export default function AboutSection() {
       const statValues = statsRef.current.querySelectorAll(".stat-value");
 
       statValues.forEach((el, i) => {
-        const target = aboutContent.stats[i].value;
+        const target = aboutContent.stats[i]?.value ?? 0;
         const obj = { value: 0 };
 
-        gsap.to(obj, {
-          value: target,
-          duration: 2,
-          ease: "power2.out",
-          onUpdate: () => {
-            (el as HTMLElement).textContent = Math.round(obj.value).toString();
-          },
-          scrollTrigger: {
-            trigger: el,
-            start: "top 90%",
-            once: true,
-          },
-        });
+        gsap.fromTo(
+          obj,
+          { value: 0 },
+          {
+            value: target,
+            duration: 2,
+            ease: "power2.out",
+            onUpdate: () => {
+              if (el) {
+                (el as HTMLElement).textContent = Math.round(obj.value).toString();
+              }
+            },
+            scrollTrigger: {
+              trigger: el,
+              start: "top 90%",
+              once: true,
+            },
+          }
+        );
       });
     },
-    { scope: statsRef }
+    { scope: statsRef, dependencies: [aboutContent.stats] }
   );
 
   return (
@@ -106,7 +112,7 @@ export default function AboutSection() {
                       fontFamily: "var(--font-heading)",
                     }}
                   >
-                    0
+                    {stat.value}
                   </span>
                   <span
                     className="text-gold-500 font-bold"
