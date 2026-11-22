@@ -23,6 +23,7 @@ import {
   X,
   Loader2,
   Languages,
+  HelpCircle,
 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { toast } from "@/components/ui/ToastProvider";
@@ -37,7 +38,8 @@ type SectionTab =
   | "testimonials"
   | "cta"
   | "why_us"
-  | "process";
+  | "process"
+  | "faq";
 
 export default function WebsiteContentPage() {
   const [activeTab, setActiveTab] = useState<SectionTab>("hero");
@@ -297,6 +299,52 @@ export default function WebsiteContentPage() {
     ],
   });
 
+  // 10. FAQ Questions & Answers State
+  const [faqData, setFaqData] = useState({
+    sectionLabel: "Frequently Asked Questions",
+    heading: "Got Questions? We Have Answers.",
+    subheading:
+      "Everything you need to know about our premium UPVC & Aluminium windows, doors, warranties, and installation process.",
+    items: [
+      {
+        question:
+          "What is the difference between UPVC and Aluminium windows? Which should I choose?",
+        answer:
+          "UPVC offers world-class thermal insulation, superior soundproofing (reduces outside traffic noise by up to 40dB), and 100% rust and termite resistance — ideal for bedrooms and living spaces. Aluminium delivers ultra-slim frames, maximum glass area for wide panoramic views, and exceptional structural rigidity for large openings and high wind zones. At Siri Windows, we help you pick the ideal combination for your home architecture.",
+      },
+      {
+        question:
+          "How long does manufacturing and installation take after placing an order?",
+        answer:
+          "Typically 7 to 10 working days from precision laser measurement to complete site installation. Custom architectural profiles or specialty double-glazed units (DGU) take around 10 to 14 days. Our certified in-house technicians ensure clean, hassle-free installation with zero damage to your finished paintwork.",
+      },
+      {
+        question:
+          "Are your windows resistant to heavy rains, coastal cyclones, and high winds?",
+        answer:
+          "Yes, 100%. Our profiles are reinforced with galvanized steel cores, multi-point locking mechanisms, and EPDM rubber weather-seals. They are tested to withstand high wind loads of up to 2,500 Pascals and torrential coastal monsoon rains without water leakage or frame rattling.",
+      },
+      {
+        question:
+          "Can I customize window sizes, glass types, and frame colors?",
+        answer:
+          "Absolutely! Every window and door is custom-fabricated to your exact millimeter dimensions. We offer clear, tinted, frosted, toughened safety glass, and acoustic double-glazed units (DGU), along with profile finishes including Classic White, Dark Walnut, Golden Oak woodgrain, and Charcoal Grey.",
+      },
+      {
+        question:
+          "What warranty do you provide on UPVC and Aluminium products?",
+        answer:
+          "We provide a 10-Year comprehensive warranty on our UPVC and Aluminium profiles against discoloration, cracking, warping, and peeling, plus a 5-Year warranty on European-grade multi-point hardware, rollers, hinges, and weather-seals.",
+      },
+      {
+        question:
+          "Do you provide free site visits and measurements in and around Tanuku?",
+        answer:
+          "Yes, we offer complimentary on-site consultations, laser measurements, and detailed cost estimates anywhere across Tanuku, Bhimavaram, Tadepalligudem, Eluru, Rajahmundry, and neighboring districts in West Godavari.",
+      },
+    ],
+  });
+
   const updateField = (section: string, field: string, value: any) => {
     if (editingLang === "en") {
       if (section === "hero") setHeroData((p) => ({ ...p, [field]: value }));
@@ -307,6 +355,7 @@ export default function WebsiteContentPage() {
       else if (section === "why_us") setWhyUsData((p) => ({ ...p, [field]: value }));
       else if (section === "process") setProcessData((p) => ({ ...p, [field]: value }));
       else if (section === "contact") setContactData((p) => ({ ...p, [field]: value }));
+      else if (section === "faq") setFaqData((p) => ({ ...p, [field]: value }));
     } else {
       setTranslations((prev) => ({
         ...prev,
@@ -375,6 +424,13 @@ export default function WebsiteContentPage() {
         address: target.contactInfo.address,
         businessHours: target.contactInfo.businessHours,
       };
+    } else if (section === "faq") {
+      sectionContent = {
+        sectionLabel: target.faqContent.sectionLabel,
+        heading: target.faqContent.heading,
+        subheading: target.faqContent.subheading,
+        items: target.faqContent.items,
+      };
     }
 
     if (sectionContent) {
@@ -410,6 +466,7 @@ export default function WebsiteContentPage() {
       else if (activeTab === "why_us") dataToTranslate = whyUsData;
       else if (activeTab === "process") dataToTranslate = processData;
       else if (activeTab === "testimonials") dataToTranslate = testimonialsData;
+      else if (activeTab === "faq") dataToTranslate = faqData;
 
       if (!dataToTranslate) {
         setIsTranslating(false);
@@ -477,6 +534,7 @@ export default function WebsiteContentPage() {
             if (item.section === "cta" && item.content) setCtaData((prev) => ({ ...prev, ...item.content }));
             if (item.section === "why_us" && item.content) setWhyUsData((prev) => ({ ...prev, ...item.content }));
             if (item.section === "process" && item.content) setProcessData((prev) => ({ ...prev, ...item.content }));
+            if (item.section === "faq" && item.content) setFaqData((prev) => ({ ...prev, ...item.content }));
           }
           setTranslations(loadedTranslations);
         }
@@ -552,6 +610,13 @@ export default function WebsiteContentPage() {
               hi: translations.hi.process,
             },
           },
+          faq: {
+            ...faqData,
+            translations: {
+              te: translations.te.faq,
+              hi: translations.hi.faq,
+            },
+          },
         }),
       });
 
@@ -583,6 +648,7 @@ export default function WebsiteContentPage() {
     { id: "cta", label: "Promo CTA Banner", icon: Megaphone },
     { id: "why_us", label: "Why Choose Us", icon: ShieldCheck },
     { id: "process", label: "5-Step Process", icon: CheckCircle },
+    { id: "faq", label: "FAQ Questions", icon: HelpCircle },
   ];
 
   return (
@@ -1529,6 +1595,214 @@ export default function WebsiteContentPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* 10. FAQ QUESTIONS & ANSWERS */}
+            {activeTab === "faq" && (
+              <div className="space-y-6 text-xs">
+                {/* Header Fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-800 dark:text-slate-200">
+                      Section Badge / Label
+                    </label>
+                    <input
+                      type="text"
+                      value={getFieldValue("faq", "sectionLabel", faqData.sectionLabel)}
+                      onChange={(e) => updateField("faq", "sectionLabel", e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-800 dark:text-slate-200">
+                      Section Heading
+                    </label>
+                    <input
+                      type="text"
+                      value={getFieldValue("faq", "heading", faqData.heading)}
+                      onChange={(e) => updateField("faq", "heading", e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-slate-800 dark:text-slate-200">
+                    Subheading / Description
+                  </label>
+                  <input
+                    type="text"
+                    value={getFieldValue("faq", "subheading", faqData.subheading)}
+                    onChange={(e) => updateField("faq", "subheading", e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs"
+                  />
+                </div>
+
+                {/* FAQ Items */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                        <HelpCircle className="w-4 h-4 text-amber-500" />
+                        Frequently Asked Questions ({faqData.items.length})
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        {editingLang === "en"
+                          ? "Questions and answers displayed on the landing page accordion."
+                          : `Editing translated Q&A in ${editingLang === "te" ? "Telugu" : "Hindi"}.`}
+                      </p>
+                    </div>
+
+                    {editingLang === "en" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFaqData({
+                            ...faqData,
+                            items: [
+                              ...faqData.items,
+                              {
+                                question: "New Question Title",
+                                answer: "Detailed answer explaining the solution.",
+                              },
+                            ],
+                          });
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold text-xs transition"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Question
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    {faqData.items.map((item, idx) => {
+                      const currentLang = editingLang !== "en" ? (editingLang as "te" | "hi") : null;
+                      const trItems = currentLang ? translations[currentLang]?.faq?.items || [] : [];
+                      const trQuestion = trItems[idx]?.question ?? "";
+                      const trAnswer = trItems[idx]?.answer ?? "";
+
+                      return (
+                        <div
+                          key={idx}
+                          className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-black text-[11px]">
+                              Question #{idx + 1}
+                            </span>
+                            {editingLang === "en" && faqData.items.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = faqData.items.filter((_, i) => i !== idx);
+                                  setFaqData({ ...faqData, items: updated });
+                                }}
+                                className="text-slate-400 hover:text-red-500 transition p-1 cursor-pointer"
+                                title="Delete Question"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Reference for non-English editing */}
+                          {editingLang !== "en" && (
+                            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[11px] space-y-1">
+                              <p className="font-semibold text-amber-900 dark:text-amber-300">
+                                English Reference:
+                              </p>
+                              <p className="font-medium text-slate-700 dark:text-slate-300">
+                                Q: {item.question}
+                              </p>
+                              <p className="text-slate-500 dark:text-slate-400 line-clamp-2">
+                                A: {item.answer}
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                              Question Text
+                            </label>
+                            <input
+                              type="text"
+                              value={editingLang === "en" ? item.question : trQuestion}
+                              onChange={(e) => {
+                                if (editingLang === "en") {
+                                  const updated = [...faqData.items];
+                                  updated[idx].question = e.target.value;
+                                  setFaqData({ ...faqData, items: updated });
+                                } else if (currentLang) {
+                                  const currentTr = [...(translations[currentLang]?.faq?.items || faqData.items.map(() => ({ question: "", answer: "" })))];
+                                  while (currentTr.length <= idx) {
+                                    currentTr.push({ question: "", answer: "" });
+                                  }
+                                  currentTr[idx] = {
+                                    ...currentTr[idx],
+                                    question: e.target.value,
+                                  };
+                                  setTranslations((prev) => ({
+                                    ...prev,
+                                    [currentLang]: {
+                                      ...prev[currentLang],
+                                      faq: {
+                                        ...(prev[currentLang]?.faq || {}),
+                                        items: currentTr,
+                                      },
+                                    },
+                                  }));
+                                }
+                              }}
+                              placeholder="e.g. What is the difference between UPVC and Aluminium?"
+                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 font-bold text-xs"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                              Detailed Answer
+                            </label>
+                            <textarea
+                              rows={3}
+                              value={editingLang === "en" ? item.answer : trAnswer}
+                              onChange={(e) => {
+                                if (editingLang === "en") {
+                                  const updated = [...faqData.items];
+                                  updated[idx].answer = e.target.value;
+                                  setFaqData({ ...faqData, items: updated });
+                                } else if (currentLang) {
+                                  const currentTr = [...(translations[currentLang]?.faq?.items || faqData.items.map(() => ({ question: "", answer: "" })))];
+                                  while (currentTr.length <= idx) {
+                                    currentTr.push({ question: "", answer: "" });
+                                  }
+                                  currentTr[idx] = {
+                                    ...currentTr[idx],
+                                    answer: e.target.value,
+                                  };
+                                  setTranslations((prev) => ({
+                                    ...prev,
+                                    [currentLang]: {
+                                      ...prev[currentLang],
+                                      faq: {
+                                        ...(prev[currentLang]?.faq || {}),
+                                        items: currentTr,
+                                      },
+                                    },
+                                  }));
+                                }
+                              }}
+                              placeholder="Provide clear, convincing answer for customers..."
+                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs leading-relaxed"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}

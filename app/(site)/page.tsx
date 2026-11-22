@@ -5,6 +5,7 @@ import WhyUsSection from "@/components/sections/WhyUsSection";
 import ProcessSection from "@/components/sections/ProcessSection";
 import GallerySection from "@/components/sections/GallerySection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
+import FAQSection from "@/components/sections/FAQSection";
 import CTABanner from "@/components/sections/CTABanner";
 import ContactSection from "@/components/sections/ContactSection";
 
@@ -18,6 +19,7 @@ export default function Home() {
       <ProcessSection />
       <GallerySection />
       <TestimonialsSection />
+      <FAQSection />
       <CTABanner />
       <ContactSection />
     </>

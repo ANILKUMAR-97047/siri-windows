@@ -43,6 +43,19 @@ export interface Testimonial {
   quote: string;
 }
 
+export interface FAQItem {
+  question: string;
+  answer: string;
+  category?: string;
+}
+
+export interface FAQContent {
+  sectionLabel: string;
+  heading: string;
+  subheading: string;
+  items: FAQItem[];
+}
+
 export interface GalleryImage {
   src: string;
   alt: string;
@@ -114,6 +127,7 @@ export interface WebsiteContent {
     next: string;
   };
   testimonialsContent: typeof testimonialsContent;
+  faqContent: FAQContent;
   ctaBannerContent: typeof ctaBannerContent;
   contactFormContent: typeof contactFormContent;
   contactLabels: ContactLabels;
@@ -260,6 +274,38 @@ export const testimonialsContent = {
   ] as Testimonial[],
 };
 
+export const faqContent: FAQContent = {
+  sectionLabel: "Frequently Asked Questions",
+  heading: "Got Questions? We Have Answers.",
+  subheading: "Everything you need to know about our premium UPVC & Aluminium windows, doors, warranties, and installation process.",
+  items: [
+    {
+      question: "What is the difference between UPVC and Aluminium windows? Which should I choose?",
+      answer: "UPVC offers world-class thermal insulation, superior soundproofing (reduces outside traffic noise by up to 40dB), and 100% rust and termite resistance — ideal for bedrooms and living spaces. Aluminium delivers ultra-slim frames, maximum glass area for wide panoramic views, and exceptional structural rigidity for large openings and high wind zones. At Siri Windows, we help you pick the ideal combination for your home architecture.",
+    },
+    {
+      question: "How long does manufacturing and installation take after placing an order?",
+      answer: "Typically 7 to 10 working days from precision laser measurement to complete site installation. Custom architectural profiles or specialty double-glazed units (DGU) take around 10 to 14 days. Our certified in-house technicians ensure clean, hassle-free installation with zero damage to your finished paintwork.",
+    },
+    {
+      question: "Are your windows resistant to heavy rains, coastal cyclones, and high winds?",
+      answer: "Yes, 100%. Our profiles are reinforced with galvanized steel cores, multi-point locking mechanisms, and EPDM rubber weather-seals. They are tested to withstand high wind loads of up to 2,500 Pascals and torrential coastal monsoon rains without any water seepage or rattling.",
+    },
+    {
+      question: "Can I customize window sizes, glass types, and frame colors?",
+      answer: "Absolutely! Every window and door is custom-fabricated to your exact millimeter dimensions. We offer clear, tinted, frosted, toughened safety glass, and acoustic double-glazed units (DGU), along with profile finishes including Classic White, Dark Walnut, Golden Oak woodgrain, and Charcoal Grey.",
+    },
+    {
+      question: "What warranty do you provide on UPVC and Aluminium products?",
+      answer: "We provide a 10-Year comprehensive warranty on our UPVC and Aluminium profiles against discoloration, cracking, warping, and peeling, plus a 5-Year warranty on European-grade multi-point hardware, rollers, hinges, and weather-seals.",
+    },
+    {
+      question: "Do you provide free site visits and measurements in and around Tanuku?",
+      answer: "Yes, we offer complimentary on-site consultations, laser measurements, and detailed cost estimates anywhere across Tanuku, Bhimavaram, Tadepalligudem, Eluru, Rajahmundry, and neighboring districts in West Godavari.",
+    },
+  ],
+};
+
 export const ctaBannerContent = {
   heading: "Ready to Upgrade Your View?",
   subheading: "Get a free, no-obligation quote for your home or commercial project. Our experts will guide you to the perfect solution.",
@@ -283,6 +329,7 @@ const englishContent = {
   processContent,
   galleryContent,
   testimonialsContent,
+  faqContent,
   ctaBannerContent,
   contactFormContent,
   contactLabels: {
@@ -335,6 +382,37 @@ const teluguContent: WebsiteContent = {
   processContent: { sectionLabel: "మా ప్రక్రియ", heading: "ఆలోచన నుండి అమలు వరకు", steps: processContent.steps.map((step, index) => ({ ...step, title: ["సలహా", "కొలత", "కస్టమ్ తయారీ", "ఇన్‌స్టాలేషన్", "అమ్మకాల తర్వాత సహాయం"][index], description: ["మీ అవసరాలు చెప్పండి, సరైన కిటికీ మరియు తలుపు సొల్యూషన్లు ఎంచుకోవడంలో మేము సహాయపడతాము.", "సరైన కస్టమ్ ఫిట్ కోసం మా టీమ్ మీ సైట్‌కు వచ్చి ఖచ్చితమైన కొలతలు తీసుకుంటుంది.", "నాణ్యమైన మెటీరియల్స్‌తో మీ ఉత్పత్తులు అవసరాలకు అనుగుణంగా తయారు చేస్తాము.", "నిపుణులు జాగ్రత్తగా మరియు ఖచ్చితంగా కిటికీలు, తలుపులు అమర్చుతారు.", "ఇన్‌స్టాలేషన్ తర్వాత కూడా వారంటీ మరియు సర్వీస్ సహాయం అందిస్తాము."][index] })) },
   galleryContent: { ...galleryContent, sectionLabel: "గ్యాలరీ", heading: "మా పనితనం", filters: ["అన్నీ", "కిటికీలు", "తలుపులు"], view: "చూడండి", lightboxLabel: "చిత్రం", close: "మూసివేయండి", previous: "మునుపటి చిత్రం", next: "తదుపరి చిత్రం" },
   testimonialsContent: { ...testimonialsContent, sectionLabel: "కస్టమర్ అభిప్రాయాలు", heading: "మా కస్టమర్లు ఏమంటున్నారు", testimonials: testimonialsContent.testimonials.map((item, index) => ({ ...item, quote: ["సిరి ఎంటర్‌ప్రైజెస్ మా ఇంటిని UPVC కిటికీలతో అందంగా మార్చింది. శబ్దం చాలా తగ్గింది, సేవ కూడా చాలా బాగుంది.", "మా కొత్త ఇంటికి సిరి విండోస్ ఎంచుకున్నాము. అల్యూమినియం స్లైడింగ్ తలుపులు చాలా అందంగా ఉన్నాయి.", "ప్రారంభం నుండి ముగింపు వరకు ప్రొఫెషనల్ సర్వీస్. కొలతలు ఖచ్చితంగా తీసుకుని కిటికీలు బాగా అమర్చారు.", "అద్భుతమైన పనితనం మరియు మన్నికైన ఉత్పత్తులు. ఫ్రెంచ్ తలుపుల వల్ల మా లివింగ్ రూమ్‌లో సహజ కాంతి పెరిగింది.", "సిరి ఎంటర్‌ప్రైజెస్ మంచి నాణ్యతను సరైన ధరలో ఇచ్చింది. UPVC తలుపులు బలంగా మరియు ప్రీమియంగా ఉన్నాయి."][index] })) },
+  faqContent: {
+    sectionLabel: "తరచుగా అడిగే ప్రశ్నలు",
+    heading: "తరచుగా అడిగే ప్రశ్నలు & సమాధానాలు",
+    subheading: "మా ప్రీమియం UPVC మరియు అల్యూమినియం కిటికీలు, తలుపులు, వారంటీ మరియు ఇన్‌స్టాలేషన్ గురించి అన్ని వివరాలు.",
+    items: [
+      {
+        question: "UPVC మరియు అల్యూమినియం కిటికీల మధ్య తేడా ఏమిటి? నేను దేన్ని ఎంచుకోవాలి?",
+        answer: "UPVC అద్భుతమైన సౌండ్‌ప్రూఫింగ్ (బయటి శబ్దాన్ని 40dB వరకు తగ్గిస్తుంది), వేడిని అడ్డుకునే ఇన్సులేషన్ మరియు తుప్పు పట్టని గుణాన్ని కలిగి ఉంటుంది - ఇది బెడ్‌రూమ్‌లు మరియు నివాసాలకు అనువైనది. అల్యూమినియం చాలా సన్నని ఫ్రేమ్‌లతో పెద్ద గ్లాస్ వీక్షణను, అధిక బలాన్ని ఇస్తుంది - ఇది బాల్కనీలు మరియు ఆధునిక లివింగ్ రూమ్‌లకు సరైనది. మీ ఇంటి డిజైన్‌కు సరిపోయే సరైన కలయికను సిరి విండోస్ నిపుణులు సూచిస్తారు.",
+      },
+      {
+        question: "ఆర్డర్ చేసిన తర్వాత తయారీ మరియు ఇన్‌స్టాలేషన్‌కు ఎంత సమయం పడుతుంది?",
+        answer: "సైట్‌లో ఖచ్చితమైన కొలతలు తీసుకున్న తర్వాత సాధారణంగా 7 నుండి 10 పని దినాలలో పూర్తి ఇన్‌స్టాలేషన్ పూర్తవుతుంది. ప్రత్యేక డబుల్ గ్లేజ్డ్ (DGU) లేదా కస్టమ్ డిజైన్లకు 10-14 రోజులు పట్టవచ్చు. మీ గోడలకు ఎటువంటి డ్యామేజ్ లేకుండా మా నిపుణులు శుభ్రంగా అమర్చుతారు.",
+      },
+      {
+        question: "భారీ వర్షాలు, తుఫాను గాలులకు ఇవి తట్టుకోగలవా? నీరు లోపలికి రాదా?",
+        answer: "ఖచ్చితంగా తట్టుకుంటాయి. మా ప్రొఫైల్స్ లోపల గాల్వనైజ్డ్ స్టీల్ రీన్‌ఫోర్స్‌మెంట్, మల్టీ-పాయింట్ లాకింగ్ మరియు డబుల్ EPDM రబ్బర్ సీల్స్ ఉంటాయి. ఇవి తీరప్రాంత తుఫానులు, తీవ్రమైన వర్షపు నీటిని 100% లోపలికి రాకుండా అడ్డుకుంటాయి.",
+      },
+      {
+        question: "కిటికీల సైజులు, రంగులు మరియు గ్లాస్ రకాలను మేము ఎంచుకోవచ్చా?",
+        answer: "తప్పకుండా! మీ ఇంటి కొలతలకు అనుగుణంగా ప్రతి కిటికీని కస్టమ్ డిజైన్ చేస్తాము. క్లియర్, టింటెడ్, ఫ్రాస్టెడ్, టఫ్‌న్డ్ గ్లాస్ మరియు సౌండ్‌ప్రూఫ్ DGU గ్లాస్ ఎంపికలు ఉన్నాయి. అలాగే వైట్, వుడ్‌గ్రెయిన్ (ఓక్, వాల్‌నట్), చార్‌కోల్ గ్రే కలర్ ఆప్షన్లు లభిస్తాయి.",
+      },
+      {
+        question: "సిరి విండోస్ ఉత్పత్తులపై ఎంత కాలం వారంటీ ఉంటుంది?",
+        answer: "మా UPVC మరియు అల్యూమినియం ప్రొఫైల్స్‌పై రంగు మారకుండా, పగుళ్లు రాకుండా 10 సంవత్సరాల వారంటీని, అలాగే రోలర్లు, హింజెస్, హ్యాండిల్స్ మరియు లాకింగ్ హార్డ్‌వేర్‌పై 5 సంవత్సరాల వారంటీని అందిస్తున్నాము.",
+      },
+      {
+        question: "తనుకు మరియు చుట్టుపక్కల ప్రాంతాల్లో ఉచిత సైట్ విజిట్ మరియు కొలతలు ఇస్తారా?",
+        answer: "అవును! తనుకు, భీమవరం, తాడేపల్లిగూడెం, ఏలూరు, రాజమండ్రి మరియు పశ్చిమ గోదావరి పరిసర ప్రాంతాల్లో ఎక్కడైనా మా నిపుణులు ఉచితంగా సైట్ విజిట్ చేసి, ఖచ్చితమైన లేజర్ కొలతలు తీసుకుని కొటేషన్ అందిస్తారు.",
+      },
+    ],
+  },
   ctaBannerContent: { heading: "మీ వీక్షణను అప్‌గ్రేడ్ చేయడానికి సిద్ధమా?", subheading: "మీ ఇల్లు లేదా కమర్షియల్ ప్రాజెక్ట్ కోసం ఉచిత కోట్ పొందండి. మా నిపుణులు సరైన సొల్యూషన్‌ను సూచిస్తారు.", cta: "మీ ఉచిత కోట్ పొందండి" },
   contactFormContent: { sectionLabel: "సంప్రదించండి", heading: "మీ ప్రాజెక్ట్‌ను ప్రారంభిద్దాం", productOptions: ["UPVC కిటికీలు", "అల్యూమినియం కిటికీలు", "UPVC తలుపులు", "అల్యూమినియం తలుపులు", "స్లైడింగ్ కిటికీలు & తలుపులు", "కేస్మెంట్ కిటికీలు", "ఫ్రెంచ్ తలుపులు", "కస్టమ్ సొల్యూషన్", "ఇతర / తెలియదు"] },
   contactLabels: { name: "పూర్తి పేరు *", phone: "ఫోన్ నంబర్ *", location: "ప్రాంతం / నగరం *", email: "ఇమెయిల్ (ఐచ్చికం)", product: "ఉత్పత్తి ఆసక్తి", productPlaceholder: "ఉత్పత్తిని ఎంచుకోండి", message: "మీ సందేశం / అవసరాలు *", sending: "పంపుతోంది...", success: "విజయవంతంగా పంపబడింది!", submit: "సందేశం పంపండి", error: "ఏదో తప్పు జరిగింది. దయచేసి మళ్లీ ప్రయత్నించండి లేదా నేరుగా కాల్ చేయండి.", getInTouch: "సంప్రదించండి", showroom: "మా షోరూమ్‌కు రండి", call: "మాకు కాల్ చేయండి", hours: "పని సమయాలు", emailTitle: "ఇమెయిల్", mapTitle: "సిరి ఎంటర్‌ప్రైజెస్ స్థానం - తనుకు, ఆంధ్రప్రదేశ్", requiredName: "పేరు అవసరం", requiredPhone: "ఫోన్ నంబర్ అవసరం", requiredLocation: "ప్రాంతం / నగరం అవసరం", invalidPhone: "చెల్లుబాటు అయ్యే 10 అంకెల ఫోన్ నంబర్ ఇవ్వండి", invalidEmail: "చెల్లుబాటు అయ్యే ఇమెయిల్ ఇవ్వండి", requiredMessage: "సందేశం అవసరం" },
@@ -357,6 +435,37 @@ const hindiContent: WebsiteContent = {
   processContent: { sectionLabel: "हमारी प्रक्रिया", heading: "विचार से वास्तविकता तक", steps: processContent.steps.map((step, index) => ({ ...step, title: ["सलाह", "माप", "कस्टम निर्माण", "इंस्टॉलेशन", "बाद की सहायता"][index], description: ["अपनी जरूरत बताएं, हम सही विंडो और डोर समाधान चुनने में मदद करेंगे.", "हमारी टीम सही कस्टम फिट के लिए साइट पर जाकर सटीक माप लेती है.", "आपके उत्पाद गुणवत्ता वाले मटेरियल से आपकी जरूरत के अनुसार बनाए जाते हैं.", "प्रोफेशनल्स सावधानी और सटीकता से विंडोज़ और डोर्स इंस्टॉल करते हैं.", "इंस्टॉलेशन के बाद भी वारंटी और सर्विस सहायता देते हैं."][index] })) },
   galleryContent: { ...galleryContent, sectionLabel: "गैलरी", heading: "हमारी कारीगरी", filters: ["सभी", "विंडोज़", "डोर्स"], view: "देखें", lightboxLabel: "इमेज", close: "बंद करें", previous: "पिछली इमेज", next: "अगली इमेज" },
   testimonialsContent: { ...testimonialsContent, sectionLabel: "प्रशंसापत्र", heading: "हमारे ग्राहक क्या कहते हैं", testimonials: testimonialsContent.testimonials.map((item, index) => ({ ...item, quote: ["सिरी एंटरप्राइजेज़ ने हमारे घर को UPVC विंडोज़ से बदल दिया। शोर काफी कम हुआ और सेवा बहुत अच्छी रही.", "नई कंस्ट्रक्शन के लिए हमने सिरी विंडोज़ चुना। एल्युमिनियम स्लाइडिंग डोर्स सुंदर हैं और इंस्टॉलेशन बेहतरीन था.", "शुरू से अंत तक प्रोफेशनल सर्विस। टीम ने सही माप लिया और विंडोज़ बिल्कुल फिट हुईं.", "बेहतरीन कारीगरी और टिकाऊ उत्पाद। फ्रेंच डोर्स से हमारे लिविंग रूम में बहुत प्राकृतिक रोशनी आती है.", "सिरी एंटरप्राइजेज़ ने सही कीमत पर अच्छी क्वालिटी दी। UPVC डोर्स मजबूत और प्रीमियम दिखते हैं."][index] })) },
+  faqContent: {
+    sectionLabel: "अक्सर पूछे जाने वाले सवाल",
+    heading: "अक्सर पूछे जाने वाले सवाल",
+    subheading: "हमारी प्रीमियम UPVC और एल्युमिनियम विंडोज़, डोर्स, वारंटी और इंस्टॉलेशन से जुड़े सभी जवाब.",
+    items: [
+      {
+        question: "UPVC और एल्युमिनियम विंडोज़ में क्या अंतर है? मुझे कौन सा चुनना चाहिए?",
+        answer: "UPVC उत्कृष्ट साउंडप्रूफिंग (बाहरी शोर को 40dB तक कम करता है), बेहतर हीट इंसुलेशन और दीमक/जंग से 100% सुरक्षा देता है - यह बेडरूम और घरों के लिए सबसे अच्छा है. एल्युमिनियम स्लीक पतले फ्रेम और बड़े ग्लास एरिया के साथ आधुनिक लुक और मजबूती देता है - यह बालकनी और बड़े कमर्शियल स्पेस के लिए उत्तम है. हम आपके बजट और पसंद के अनुसार सही विकल्प चुनने में मदद करते हैं.",
+      },
+      {
+        question: "ऑर्डर देने के बाद निर्माण और इंस्टॉलेशन में कितना समय लगता है?",
+        answer: "सटीक लेज़र माप लेने के बाद आमतौर पर 7 से 10 कार्य दिवसों में इंस्टॉलेशन पूरा हो जाता है. विशेष डबल ग्लेज्ड (DGU) या कस्टम प्रोफाइल के लिए 10-14 दिन का समय लग सकता है. हमारे प्रशिक्षित कारीगर आपके पेंट या प्लास्टर को नुकसान पहुंचाए बिना सफाई से काम करते हैं.",
+      },
+      {
+        question: "क्या ये तेज़ बारिश और तूफानी हवाओं को झेल सकते हैं? क्या पानी अंदर आ सकता है?",
+        answer: "बिल्कुल! हमारी प्रोफाइल गैल्वनाइज्ड स्टील सुदृढीकरण, मल्टी-पॉइंट लॉकिंग सिस्टम और EPDM वेदर-सील से लैस हैं. ये 2500 पास्कल तक की तूफानी हवाओं और मूसलाधार मानसूनी बारिश में भी पानी को 100% अंदर आने से रोकते हैं.",
+      },
+      {
+        question: "क्या हम विंडो साइज़, ग्लास के प्रकार और फ्रेम के रंग कस्टमाइज़ कर सकते हैं?",
+        answer: "हाँ, पूरी तरह से! हर उत्पाद आपके सटीक माप के अनुसार तैयार किया जाता है. आप क्लियर, टिंटेड, फ्रॉस्टेड, टफन्ड और साउंडप्रूफ DGU ग्लास चुन सकते हैं. साथ ही क्लासिक व्हाइट, वुडन टेक्सचर (ओक, वॉलनट), और चारकोल ग्रे रंग भी उपलब्ध हैं.",
+      },
+      {
+        question: "आपके UPVC और एल्युमिनियम प्रोडक्ट्स पर क्या वारंटी है?",
+        answer: "हम प्रोफाइल के रंग, क्रैकिंग या मुड़ने पर 10 साल की व्यापक वारंटी देते हैं, और यूरोपियन-ग्रेड हार्डवेयर, रोलर्स, हिंज और लॉकिंग सिस्टम पर 5 साल की वारंटी प्रदान करते हैं.",
+      },
+      {
+        question: "क्या आप तनुकु और आसपास के क्षेत्रों में मुफ्त साइट विज़िट और माप देते हैं?",
+        answer: "हाँ! तनुकु, भीमावरम, ताडेपल्लीगुडेम, एलुरु, राजमुंदरी और पश्चिम गोदावरी जिले में कहीं भी हमारी टीम मुफ्त साइट विज़िट, सटीक लेज़र माप और कोटेशन प्रदान करती है.",
+      },
+    ],
+  },
   ctaBannerContent: { heading: "अपना व्यू अपग्रेड करने के लिए तैयार हैं?", subheading: "अपने घर या कमर्शियल प्रोजेक्ट के लिए मुफ्त कोट पाएं। हमारे विशेषज्ञ सही समाधान चुनने में मदद करेंगे.", cta: "अपना मुफ्त कोट पाएं" },
   contactFormContent: { sectionLabel: "संपर्क करें", heading: "अपना प्रोजेक्ट शुरू करें", productOptions: ["UPVC विंडोज़", "एल्युमिनियम विंडोज़", "UPVC डोर्स", "एल्युमिनियम डोर्स", "स्लाइडिंग विंडोज़ और डोर्स", "केसमेंट विंडोज़", "फ्रेंच डोर्स", "कस्टम समाधान", "अन्य / निश्चित नहीं"] },
   contactLabels: { name: "पूरा नाम *", phone: "फोन नंबर *", location: "स्थान / शहर *", email: "ईमेल (वैकल्पिक)", product: "उत्पाद रुचि", productPlaceholder: "उत्पाद चुनें", message: "आपका संदेश / जरूरतें *", sending: "भेजा जा रहा है...", success: "सफलतापूर्वक भेजा गया!", submit: "संदेश भेजें", error: "कुछ गलत हुआ। कृपया फिर कोशिश करें या हमें सीधे कॉल करें.", getInTouch: "संपर्क में रहें", showroom: "हमारे शोरूम आएं", call: "हमें कॉल करें", hours: "व्यावसायिक समय", emailTitle: "ईमेल", mapTitle: "सिरी एंटरप्राइजेज़ लोकेशन - तनुकु, आंध्र प्रदेश", requiredName: "नाम जरूरी है", requiredPhone: "फोन नंबर जरूरी है", requiredLocation: "स्थान / शहर जरूरी है", invalidPhone: "मान्य 10 अंकों का फोन नंबर दर्ज करें", invalidEmail: "मान्य ईमेल पता दर्ज करें", requiredMessage: "संदेश जरूरी है" },

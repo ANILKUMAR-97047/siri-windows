@@ -89,6 +89,7 @@ export default function LanguageProvider({
     const cta = dynamicContent.cta;
     const whyUs = dynamicContent.why_us;
     const process = dynamicContent.process;
+    const faq = dynamicContent.faq;
 
     const isEn = language === "en";
     const heroTr = hero?.translations?.[language];
@@ -99,6 +100,7 @@ export default function LanguageProvider({
     const ctaTr = cta?.translations?.[language];
     const whyUsTr = whyUs?.translations?.[language];
     const processTr = process?.translations?.[language];
+    const faqTr = faq?.translations?.[language];
 
     const statLabels: Record<LanguageCode, string[]> = {
       en: ["Years Experience", "Projects Completed", "Happy Clients", "Districts Covered"],
@@ -281,6 +283,33 @@ export default function LanguageProvider({
                   : base.processContent.steps),
           }
         : base.processContent,
+
+      // 9. FAQ Section
+      faqContent: faq
+        ? {
+            ...base.faqContent,
+            sectionLabel: isEn
+              ? (faq.sectionLabel || base.faqContent.sectionLabel)
+              : (faqTr?.sectionLabel || base.faqContent.sectionLabel),
+            heading: isEn
+              ? (faq.heading || base.faqContent.heading)
+              : (faqTr?.heading || base.faqContent.heading),
+            subheading: isEn
+              ? (faq.subheading || base.faqContent.subheading)
+              : (faqTr?.subheading || base.faqContent.subheading),
+            items: isEn
+              ? (Array.isArray(faq.items) && faq.items.length > 0
+                  ? faq.items
+                  : base.faqContent.items)
+              : (Array.isArray(faqTr?.items) && faqTr.items.length > 0
+                  ? (Array.isArray(faq.items)
+                      ? faq.items.map((it: any, i: number) => faqTr.items[i] || it)
+                      : faqTr.items)
+                  : (Array.isArray(faq.items) && faq.items.length > 0
+                      ? faq.items
+                      : base.faqContent.items)),
+          }
+        : base.faqContent,
     };
 
     return {

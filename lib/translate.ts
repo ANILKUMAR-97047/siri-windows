@@ -24,6 +24,8 @@ function initSeedCache() {
     [en.whyUsContent.heading, te.whyUsContent.heading, "te"],
     [en.processContent.heading, te.processContent.heading, "te"],
     [en.testimonialsContent.heading, te.testimonialsContent.heading, "te"],
+    [en.faqContent.heading, te.faqContent.heading, "te"],
+    [en.faqContent.subheading, te.faqContent.subheading, "te"],
 
     [en.heroContent.headline, hi.heroContent.headline, "hi"],
     [en.heroContent.subheadline, hi.heroContent.subheadline, "hi"],
@@ -39,6 +41,8 @@ function initSeedCache() {
     [en.whyUsContent.heading, hi.whyUsContent.heading, "hi"],
     [en.processContent.heading, hi.processContent.heading, "hi"],
     [en.testimonialsContent.heading, hi.testimonialsContent.heading, "hi"],
+    [en.faqContent.heading, hi.faqContent.heading, "hi"],
+    [en.faqContent.subheading, hi.faqContent.subheading, "hi"],
   ];
 
   for (const [source, target, lang] of pairs) {

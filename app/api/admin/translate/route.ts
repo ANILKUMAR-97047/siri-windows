@@ -23,6 +23,18 @@ export async function POST(request: Request) {
       else if (section === "why_us") keys = ["heading"];
       else if (section === "process") keys = ["heading"];
       else if (section === "testimonials") keys = ["heading"];
+      else if (section === "faq") {
+        const translated: any = await translateSectionFields(data, targetLang, ["sectionLabel", "heading", "subheading"]);
+        if (Array.isArray(data.items)) {
+          translated.items = await Promise.all(
+            data.items.map(async (item: any) => ({
+              question: await translateText(item.question || "", targetLang),
+              answer: await translateText(item.answer || "", targetLang),
+            }))
+          );
+        }
+        return NextResponse.json({ success: true, translated });
+      }
 
       const translated = await translateSectionFields(data, targetLang, keys);
       return NextResponse.json({ success: true, translated });

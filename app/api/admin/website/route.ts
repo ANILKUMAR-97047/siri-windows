@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { translateSectionFields } from "@/lib/translate";
+import { translateSectionFields, translateText } from "@/lib/translate";
 
 export async function GET() {
   try {
@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       cta,
       why_us,
       process,
+      faq,
     } = body;
 
     // Automatic translation for sections if not explicitly provided
@@ -149,6 +150,49 @@ export async function POST(request: Request) {
       }
     }
 
+    if (faq) {
+      faq.translations = faq.translations || {};
+      if (!faq.translations.te?.heading && faq.heading) {
+        faq.translations.te = {
+          ...faq.translations.te,
+          ...(await translateSectionFields(faq, "te", ["sectionLabel", "heading", "subheading"])),
+        };
+      }
+      if (Array.isArray(faq.items) && (!faq.translations.te?.items || faq.translations.te.items.length !== faq.items.length)) {
+        faq.translations.te = faq.translations.te || {};
+        faq.translations.te.items = await Promise.all(
+          faq.items.map(async (it: any, i: number) => {
+            const existing = faq.translations.te?.items?.[i];
+            if (existing?.question && existing?.answer) return existing;
+            return {
+              question: await translateText(it.question || "", "te"),
+              answer: await translateText(it.answer || "", "te"),
+            };
+          })
+        );
+      }
+
+      if (!faq.translations.hi?.heading && faq.heading) {
+        faq.translations.hi = {
+          ...faq.translations.hi,
+          ...(await translateSectionFields(faq, "hi", ["sectionLabel", "heading", "subheading"])),
+        };
+      }
+      if (Array.isArray(faq.items) && (!faq.translations.hi?.items || faq.translations.hi.items.length !== faq.items.length)) {
+        faq.translations.hi = faq.translations.hi || {};
+        faq.translations.hi.items = await Promise.all(
+          faq.items.map(async (it: any, i: number) => {
+            const existing = faq.translations.hi?.items?.[i];
+            if (existing?.question && existing?.answer) return existing;
+            return {
+              question: await translateText(it.question || "", "hi"),
+              answer: await translateText(it.answer || "", "hi"),
+            };
+          })
+        );
+      }
+    }
+
     const supabase = getAdminClient();
 
     const updates = [
@@ -161,6 +205,7 @@ export async function POST(request: Request) {
       { section: "cta", content: cta },
       { section: "why_us", content: why_us },
       { section: "process", content: process },
+      { section: "faq", content: faq },
     ].filter((item) => item.content !== undefined);
 
     for (const item of updates) {
