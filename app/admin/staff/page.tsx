@@ -8,6 +8,7 @@ import {
   Plus,
   Phone,
   Banknote,
+  Coins,
   Calendar,
   CalendarCheck,
   Briefcase,
@@ -262,6 +263,13 @@ export default function StaffPage() {
           >
             <CalendarCheck className="w-3.5 h-3.5 text-emerald-500" />
             Daily Attendance & Time
+          </Link>
+          <Link
+            href="/admin/staff/advances"
+            className="px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5"
+          >
+            <Coins className="w-3.5 h-3.5 text-amber-500" />
+            Salary Advances & Kharcha
           </Link>
           <Link
             href="/admin/staff/salaries"

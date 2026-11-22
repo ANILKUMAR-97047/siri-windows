@@ -8,9 +8,9 @@ export type PermissionKey =
   | "staff"
   | "attendance"
   | "salaries"
+  | "expenses"
   | "stock"
   | "pricing"
-  | "maintenance"
   | "gallery"
   | "website"
   | "users";
@@ -43,9 +43,9 @@ export const ALL_PERMISSIONS: { key: PermissionKey; label: string; description: 
   { key: "staff", label: "Staff & Team Directory", description: "Manage workforce, designations, and contact numbers" },
   { key: "attendance", label: "Staff Attendance & Time", description: "Daily register, check-ins, leaves & overtime hours" },
   { key: "salaries", label: "Salary Records & Payroll", description: "Log monthly disbursements, allowances & deductions" },
+  { key: "expenses", label: "Admin Daily Expenses", description: "Maintain owner's daily company & personal financial ledger" },
   { key: "stock", label: "Stock & Materials", description: "Manage raw inventory, profile bars & hardware count" },
   { key: "pricing", label: "Pricing Packages", description: "Edit sq.ft rates, series specifications & package cards" },
-  { key: "maintenance", label: "Daily Maintenance", description: "Log workshop equipment upkeep & service tasks" },
   { key: "gallery", label: "Gallery Manager", description: "Upload & organize showroom photos on public website" },
   { key: "website", label: "Website Dynamic Data", description: "Edit hero banners, brand copy & contact info" },
 ];

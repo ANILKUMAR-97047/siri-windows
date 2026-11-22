@@ -483,50 +483,6 @@ export interface Database {
           updated_at?: string;
         };
       };
-      maintenance_logs: {
-        Row: {
-          id: string;
-          date: string;
-          location: string;
-          category: string;
-          task_description: string;
-          assigned_to: string | null;
-          priority: string;
-          status: string;
-          cost: number;
-          notes: string | null;
-          resolved_at: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          date?: string;
-          location: string;
-          category?: string;
-          task_description: string;
-          assigned_to?: string | null;
-          priority?: string;
-          status?: string;
-          cost?: number;
-          notes?: string | null;
-          resolved_at?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          date?: string;
-          location?: string;
-          category?: string;
-          task_description?: string;
-          assigned_to?: string | null;
-          priority?: string;
-          status?: string;
-          cost?: number;
-          notes?: string | null;
-          resolved_at?: string | null;
-          created_at?: string;
-        };
-      };
       gallery_images: {
         Row: {
           id: string;
@@ -633,6 +589,109 @@ export interface Database {
           name?: string;
           slug?: string;
           display_order?: number;
+        };
+      };
+      staff_advances: {
+        Row: {
+          id: string;
+          staff_id: string;
+          advance_date: string;
+          day_name: string;
+          advance_month: number;
+          advance_year: number;
+          amount: number;
+          payment_mode: string;
+          reason: string;
+          receipt_url: string | null;
+          status: "pending" | "settled";
+          settled_salary_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          staff_id: string;
+          advance_date: string;
+          day_name: string;
+          advance_month: number;
+          advance_year: number;
+          amount: number;
+          payment_mode?: string;
+          reason: string;
+          receipt_url?: string | null;
+          status?: "pending" | "settled";
+          settled_salary_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          staff_id?: string;
+          advance_date?: string;
+          day_name?: string;
+          advance_month?: number;
+          advance_year?: number;
+          amount?: number;
+          payment_mode?: string;
+          reason?: string;
+          receipt_url?: string | null;
+          status?: "pending" | "settled";
+          settled_salary_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      admin_expenses: {
+        Row: {
+          id: string;
+          expense_date: string;
+          day_name: string;
+          expense_month: number;
+          expense_year: number;
+          expense_type: "company" | "personal";
+          category: string;
+          title: string;
+          amount: number;
+          payment_mode: string;
+          description: string | null;
+          receipt_url: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          expense_date: string;
+          day_name: string;
+          expense_month: number;
+          expense_year: number;
+          expense_type: "company" | "personal";
+          category: string;
+          title: string;
+          amount: number;
+          payment_mode?: string;
+          description?: string | null;
+          receipt_url?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          expense_date?: string;
+          day_name?: string;
+          expense_month?: number;
+          expense_year?: number;
+          expense_type?: "company" | "personal";
+          category?: string;
+          title?: string;
+          amount?: number;
+          payment_mode?: string;
+          description?: string | null;
+          receipt_url?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
     };

@@ -91,11 +91,12 @@ export default function AdminHeader() {
     if (pathname.startsWith("/admin/leads")) return "Leads & Inquiries";
     if (pathname.startsWith("/admin/clients")) return "Clients & Onboarding";
     if (pathname.startsWith("/admin/projects")) return "Projects Management";
+    if (pathname.startsWith("/admin/staff/advances")) return "Staff Advances & Kharcha";
     if (pathname.startsWith("/admin/staff/salaries")) return "Monthly Salaries";
     if (pathname.startsWith("/admin/staff")) return "Staff & Team";
     if (pathname.startsWith("/admin/stock")) return "Stock & Materials";
     if (pathname.startsWith("/admin/pricing")) return "Pricing & Quotations";
-    if (pathname.startsWith("/admin/maintenance")) return "Daily Maintenance";
+    if (pathname.startsWith("/admin/expenses")) return "Daily Expenses (Owner)";
     if (pathname.startsWith("/admin/gallery")) return "Gallery & Media";
     if (pathname.startsWith("/admin/website")) return "Website Dynamic Content";
     if (pathname.startsWith("/admin/users")) return "Admin Users & Access Control";

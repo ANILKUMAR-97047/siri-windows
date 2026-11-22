@@ -99,7 +99,7 @@ export default async function AdminDashboardPage() {
                 Operational Command Center
               </h2>
               <p className="text-slate-300 text-xs md:text-sm max-w-2xl leading-relaxed">
-                Track customer inquiries, manufacturing inventory, fabrication stages, daily staff maintenance, and update dynamic content on your live public website.
+                Track customer inquiries, manufacturing inventory, fabrication stages, daily employee advances & owner expenses, and update dynamic content on your live public website.
               </p>
             </div>
 

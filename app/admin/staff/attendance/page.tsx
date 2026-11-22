@@ -6,6 +6,7 @@ import {
   Users,
   CalendarCheck,
   Banknote,
+  Coins,
   Calendar,
   Clock,
   CheckCircle2,
@@ -423,10 +424,17 @@ export default function StaffAttendancePage() {
             <Users className="w-3.5 h-3.5" />
             Staff Directory
           </Link>
-          <div className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs flex items-center gap-1.5">
+          <div className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:white shadow-xs flex items-center gap-1.5">
             <CalendarCheck className="w-3.5 h-3.5 text-emerald-500" />
             Daily Attendance & Time
           </div>
+          <Link
+            href="/admin/staff/advances"
+            className="px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5"
+          >
+            <Coins className="w-3.5 h-3.5 text-amber-500" />
+            Salary Advances & Kharcha
+          </Link>
           <Link
             href="/admin/staff/salaries"
             className="px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5"
