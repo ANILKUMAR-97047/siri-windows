@@ -416,7 +416,7 @@ export default function StaffAttendancePage() {
     <PermissionGuard permission="attendance">
       <div className="space-y-6">
         {/* Sub-navigation tabs: Staff Directory ↔ Attendance ↔ Salary Records */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl w-fit text-xs font-semibold">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl max-w-full overflow-x-auto whitespace-nowrap scrollbar-none text-xs font-semibold">
           <Link
             href="/admin/staff"
             className="px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5"

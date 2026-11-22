@@ -368,11 +368,10 @@ export default function AdminUsersPage() {
 
                       <td className="py-3 px-4 whitespace-nowrap">
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            admin.status === "active"
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${admin.status === "active"
                               ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
                               : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                          }`}
+                            }`}
                         >
                           {admin.status.toUpperCase()}
                         </span>
@@ -407,12 +406,12 @@ export default function AdminUsersPage() {
                       <td className="py-3 px-4 text-slate-500 whitespace-nowrap text-[11px]">
                         {admin.last_login_at
                           ? new Date(admin.last_login_at).toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
                           : "Never"}
                       </td>
 
@@ -449,8 +448,8 @@ export default function AdminUsersPage() {
 
         {/* Create New Admin Modal */}
         {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-4 sm:p-6 my-auto shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                   <UserCog className="w-4 h-4 text-amber-500" />
@@ -546,11 +545,10 @@ export default function AdminUsersPage() {
                         <div
                           key={perm.key}
                           onClick={() => toggleAddPermission(perm.key)}
-                          className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition select-none ${
-                            checked
+                          className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition select-none ${checked
                               ? "bg-amber-500/10 border-amber-500/40 text-slate-900 dark:text-white"
                               : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-500"
-                          }`}
+                            }`}
                         >
                           <div>
                             <div className="font-semibold text-xs">{perm.label}</div>
@@ -559,11 +557,10 @@ export default function AdminUsersPage() {
                             </div>
                           </div>
                           <div
-                            className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ml-2 ${
-                              checked
+                            className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ml-2 ${checked
                                 ? "bg-amber-500 border-amber-500 text-slate-950 font-bold"
                                 : "border-slate-300 dark:border-slate-600"
-                            }`}
+                              }`}
                           >
                             {checked && <Check className="w-3 h-3 stroke-[3]" />}
                           </div>
@@ -597,8 +594,8 @@ export default function AdminUsersPage() {
 
         {/* Edit Admin Permissions Modal */}
         {editingUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-4 sm:p-6 my-auto shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                   <Pencil className="w-4 h-4 text-amber-500" />
@@ -733,11 +730,10 @@ export default function AdminUsersPage() {
                           <div
                             key={perm.key}
                             onClick={() => toggleEditPermission(perm.key)}
-                            className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition select-none ${
-                              checked
+                            className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition select-none ${checked
                                 ? "bg-amber-500/10 border-amber-500/40 text-slate-900 dark:text-white"
                                 : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-500"
-                            }`}
+                              }`}
                           >
                             <div>
                               <div className="font-semibold text-xs">{perm.label}</div>
@@ -746,11 +742,10 @@ export default function AdminUsersPage() {
                               </div>
                             </div>
                             <div
-                              className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ml-2 ${
-                                checked
+                              className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ml-2 ${checked
                                   ? "bg-amber-500 border-amber-500 text-slate-950 font-bold"
                                   : "border-slate-300 dark:border-slate-600"
-                              }`}
+                                }`}
                             >
                               {checked && <Check className="w-3 h-3 stroke-[3]" />}
                             </div>
@@ -785,8 +780,8 @@ export default function AdminUsersPage() {
 
         {/* Delete Confirmation Dialog */}
         {deleteTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-4 sm:p-6 my-auto shadow-2xl space-y-4 text-center">
               <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto">
                 <Trash2 className="w-6 h-6" />
               </div>

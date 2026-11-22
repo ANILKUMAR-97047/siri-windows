@@ -126,7 +126,7 @@ export default function WebsiteContentPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Link
             href="/"
             target="_blank"
@@ -138,10 +138,10 @@ export default function WebsiteContentPage() {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-xs transition shadow-md shadow-amber-500/20 active:scale-95"
+            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-xs transition shadow-md shadow-amber-500/20 active:scale-95 cursor-pointer"
           >
             <Save className="w-4 h-4" />
-            {isSaving ? "Saving to Database..." : "Save & Publish Changes"}
+            {isSaving ? "Saving..." : "Save & Publish Changes"}
           </button>
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function WebsiteContentPage() {
       {/* Main Container */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm">
         {/* Section Tabs */}
-        <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 px-6 flex items-center gap-2 overflow-x-auto">
+        <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 px-3 sm:px-6 flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none">
           {[
             { id: "hero", label: "Hero Banner", icon: Sparkles },
             { id: "contact", label: "Phone & Contact Info", icon: Phone },

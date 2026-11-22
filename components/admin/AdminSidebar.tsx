@@ -21,8 +21,10 @@ import {
   UserCog,
   ChevronRight,
   LogOut,
+  X,
 } from "lucide-react";
 import { useAdminAuth } from "@/components/admin/AdminAuthProvider";
+import { useAdminUI } from "@/components/admin/AdminUIContext";
 import { PermissionKey } from "@/lib/auth-types";
 
 interface NavItem {
@@ -53,6 +55,7 @@ const baseNavigation: NavItem[] = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { user, role, hasPermission, logout } = useAdminAuth();
+  const { sidebarOpen, closeSidebar } = useAdminUI();
 
   // If Super Admin, include the Admin Users Management module
   const navigation: NavItem[] = [
@@ -74,43 +77,68 @@ export default function AdminSidebar() {
   const visibleItems = navigation.filter((item) => hasPermission(item.permission));
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col border-r border-slate-800 shrink-0 select-none">
-      {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800 bg-slate-950/40">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center font-bold text-slate-950 shadow-md shadow-amber-500/20">
-            S
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-300"
+          onClick={closeSidebar}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-100 flex flex-col border-r border-slate-800 shrink-0 select-none transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        }`}
+      >
+        {/* Brand Header */}
+        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800 bg-slate-950/40">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center font-bold text-slate-950 shadow-md shadow-amber-500/20">
+              S
+            </div>
+            <div>
+              <div className="font-semibold text-sm tracking-wide text-white flex items-center gap-1.5">
+                SIRI WINDOWS
+              </div>
+              <div className="text-[10px] text-amber-400 font-medium tracking-wider uppercase">
+                Admin Portal
+              </div>
+            </div>
           </div>
-          <div>
-            <div className="font-semibold text-sm tracking-wide text-white flex items-center gap-1.5">
-              SIRI WINDOWS
-            </div>
-            <div className="text-[10px] text-amber-400 font-medium tracking-wider uppercase">
-              Admin Portal
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              v1.0
+            </span>
+            <button
+              onClick={closeSidebar}
+              type="button"
+              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          v1.0
-        </span>
-      </div>
 
-      {/* Nav List */}
-      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-          Operations & CRM
-        </div>
-        {visibleItems.map((item) => {
-          const isActive =
-            item.href === "/admin"
-              ? pathname === "/admin"
-              : pathname.startsWith(item.href);
-          const Icon = item.icon;
+        {/* Nav List */}
+        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+          <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            Operations & CRM
+          </div>
+          {visibleItems.map((item) => {
+            const isActive =
+              item.href === "/admin"
+                ? pathname === "/admin"
+                : pathname.startsWith(item.href);
+            const Icon = item.icon;
 
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={closeSidebar}
               className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group ${
                 isActive
                   ? "bg-amber-500 text-slate-950 font-semibold shadow-sm"
@@ -199,5 +227,6 @@ export default function AdminSidebar() {
         </div>
       </div>
     </aside>
-  );
+  </>
+);
 }

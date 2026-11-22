@@ -209,11 +209,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
       {/* Beautiful Glassmorphic Alert & Confirm Modal */}
       {modal?.isOpen && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
           <div
             role="dialog"
             aria-modal="true"
-            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 text-center transform transition-all animate-in zoom-in-95 duration-200 select-none"
+            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 my-auto shadow-2xl space-y-5 text-center transform transition-all animate-in zoom-in-95 duration-200 select-none"
           >
             {/* Modal Icon Badge */}
             <div

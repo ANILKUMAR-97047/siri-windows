@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   X,
   Printer,
@@ -13,6 +13,8 @@ import {
   FileText,
   AlertTriangle,
   Info,
+  Maximize2,
+  ZoomIn,
 } from "lucide-react";
 
 interface StaffMember {
@@ -101,6 +103,59 @@ export default function AttendancePdfModal({
   const year = Number(yearStr);
   const month = Number(monthStr);
   const monthName = MONTH_NAMES[month - 1] || `Month ${month}`;
+
+  // Mobile Responsiveness & Zoom States
+  const [viewMode, setViewMode] = useState<"fit" | "full">("fit");
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [sheetHeight, setSheetHeight] = useState<number>(0);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  const DOCUMENT_WIDTH = 760;
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth);
+      }
+      if (sheetRef.current) {
+        setSheetHeight(sheetRef.current.offsetHeight || sheetRef.current.scrollHeight);
+      }
+    };
+
+    updateDimensions();
+
+    const ro = new ResizeObserver(() => {
+      updateDimensions();
+    });
+
+    if (containerRef.current) ro.observe(containerRef.current);
+    if (sheetRef.current) ro.observe(sheetRef.current);
+
+    window.addEventListener("resize", updateDimensions);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", updateDimensions);
+    };
+  }, [mode, selectedDate, staffMember]);
+
+  // Determine scaling for mobile / narrow viewports
+  const paddingX = containerWidth < 640 ? 16 : 32;
+  const availableWidth = containerWidth > 0 ? containerWidth - paddingX : DOCUMENT_WIDTH;
+  const isNarrowScreen = containerWidth > 0 && containerWidth < DOCUMENT_WIDTH + 40;
+
+  const fitScale = useMemo(() => {
+    if (!isNarrowScreen) return 1;
+    return Math.min(1, Math.max(0.35, availableWidth / DOCUMENT_WIDTH));
+  }, [isNarrowScreen, availableWidth]);
+
+  const effectiveScale = useMemo(() => {
+    if (!isNarrowScreen) return 1;
+    if (viewMode === "fit") return fitScale;
+    return zoomLevel;
+  }, [isNarrowScreen, viewMode, fitScale, zoomLevel]);
 
   // Calculate days in this month
   const totalDaysInMonth = useMemo(() => {
@@ -414,49 +469,136 @@ export default function AttendancePdfModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-1.5 sm:p-4 md:p-6 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl sm:rounded-2xl max-w-4xl w-full max-h-[96vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Modal Top Control Bar */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-800/60 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-              <FileText className="w-4 h-4" />
+        <div className="p-3 sm:p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 shrink-0 space-y-2 sm:space-y-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0">
+                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                  {mode === "all"
+                    ? `Workforce Attendance Report — ${monthName} ${year}`
+                    : `Staff Attendance Record — ${staffMember?.name} (${monthName} ${year})`}
+                </h3>
+                <p className="text-[10px] sm:text-[11px] text-slate-400 hidden xs:block truncate">
+                  Official PDF preview • Click &quot;Print / Save as PDF&quot; to export
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                {mode === "all"
-                  ? `Workforce Attendance Report — ${monthName} ${year}`
-                  : `Staff Attendance Record — ${staffMember?.name} (${monthName} ${year})`}
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                Official PDF preview • Click &quot;Print / Save as PDF&quot; to export or save as PDF
-              </p>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={handlePrint}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-sm cursor-pointer whitespace-nowrap active:scale-95"
+                title="Print or Save official PDF"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Print / Save as PDF</span>
+                <span className="sm:hidden">Print PDF</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-sm cursor-pointer"
-            >
-              <Printer className="w-4 h-4" />
-              Print / Save as PDF
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          {/* Narrow / Mobile Screen View Mode Switcher */}
+          {isNarrowScreen && (
+            <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 text-xs">
+              <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-700/80 p-0.5 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("fit")}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                    viewMode === "fit"
+                      ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+                  }`}
+                >
+                  <Maximize2 className="w-3 h-3" />
+                  Fit Screen ({Math.round(fitScale * 100)}%)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("full");
+                    setZoomLevel(1);
+                  }}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${
+                    viewMode === "full"
+                      ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs"
+                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
+                  }`}
+                >
+                  <ZoomIn className="w-3 h-3" />
+                  100% Size
+                </button>
+              </div>
+
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                {viewMode === "fit" ? (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                    ✓ Fitted to Mobile
+                  </span>
+                ) : (
+                  <span>← Swipe horizontally to pan →</span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Printable Sheet Container */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-100 dark:bg-slate-950/40">
+        <div
+          ref={containerRef}
+          className="flex-1 overflow-auto p-2 sm:p-6 bg-slate-100 dark:bg-slate-950/40 relative"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
           <div
-            id="printable-attendance-report"
-            className="bg-white text-slate-900 p-8 rounded-xl shadow-md border border-slate-200/80 max-w-3xl mx-auto"
+            style={
+              effectiveScale < 1
+                ? {
+                    width: `${Math.ceil(DOCUMENT_WIDTH * effectiveScale)}px`,
+                    height: sheetHeight > 0 ? `${Math.ceil(sheetHeight * effectiveScale)}px` : undefined,
+                    margin: "0 auto",
+                    position: "relative",
+                    flexShrink: 0,
+                  }
+                : {
+                    minWidth: `${DOCUMENT_WIDTH}px`,
+                    width: `${DOCUMENT_WIDTH}px`,
+                    margin: "0 auto",
+                    flexShrink: 0,
+                  }
+            }
           >
+            <div
+              ref={sheetRef}
+              id="printable-attendance-report"
+              style={
+                effectiveScale < 1
+                  ? {
+                      width: `${DOCUMENT_WIDTH}px`,
+                      transform: `scale(${effectiveScale})`,
+                      transformOrigin: "top left",
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                    }
+                  : {
+                      width: `${DOCUMENT_WIDTH}px`,
+                    }
+              }
+              className="bg-white text-slate-900 p-6 sm:p-8 rounded-xl shadow-md border border-slate-200/80"
+            >
             {/* Report Header & Letterhead */}
             <div className="header-box pb-3 mb-4 border-b-2 border-slate-900 flex justify-between items-start">
               <div>
@@ -827,6 +969,7 @@ export default function AttendancePdfModal({
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

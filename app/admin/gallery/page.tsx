@@ -146,12 +146,12 @@ export default function GalleryPage() {
       </div>
 
       {/* Category Pills */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none pb-1">
         {["all", "windows", "doors", "residential", "commercial"].map((cat) => (
           <button
             key={cat}
             onClick={() => setFilterCat(cat)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition shrink-0 ${
               filterCat === cat
                 ? "bg-slate-900 text-white dark:bg-amber-500 dark:text-slate-950 shadow-sm"
                 : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
@@ -220,8 +220,8 @@ export default function GalleryPage() {
 
       {/* Add Photo Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 my-auto shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                 <Plus className="w-4 h-4 text-amber-500" />

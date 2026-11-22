@@ -3,6 +3,7 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import { AdminAuthProvider, useAdminAuth } from "@/components/admin/AdminAuthProvider";
+import { AdminUIProvider } from "@/components/admin/AdminUIContext";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Loader2 } from "lucide-react";
@@ -49,8 +50,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <AdminHeader />
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-100/60 dark:bg-slate-950">
-          <div className="max-w-7xl mx-auto space-y-6">{children}</div>
+        <main className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-8 bg-slate-100/60 dark:bg-slate-950">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">{children}</div>
         </main>
       </div>
     </div>
@@ -64,7 +65,9 @@ export default function AdminLayoutShell({
 }) {
   return (
     <AdminAuthProvider>
-      <AdminLayoutInner>{children}</AdminLayoutInner>
+      <AdminUIProvider>
+        <AdminLayoutInner>{children}</AdminLayoutInner>
+      </AdminUIProvider>
     </AdminAuthProvider>
   );
 }
