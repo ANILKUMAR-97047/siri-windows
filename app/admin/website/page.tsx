@@ -22,9 +22,11 @@ import {
   Pencil,
   X,
   Loader2,
+  Languages,
 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { toast } from "@/components/ui/ToastProvider";
+import { contentByLanguage, type LanguageCode } from "@/lib/content";
 
 type SectionTab =
   | "hero"
@@ -39,9 +41,19 @@ type SectionTab =
 
 export default function WebsiteContentPage() {
   const [activeTab, setActiveTab] = useState<SectionTab>("hero");
+  const [editingLang, setEditingLang] = useState<LanguageCode>("en");
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Translations state for Telugu (te) and Hindi (hi)
+  const [translations, setTranslations] = useState<{
+    te: Record<string, any>;
+    hi: Record<string, any>;
+  }>({
+    te: {},
+    hi: {},
+  });
 
   // 1. Hero Banner State
   const [heroData, setHeroData] = useState({
@@ -285,6 +297,159 @@ export default function WebsiteContentPage() {
     ],
   });
 
+  const updateField = (section: string, field: string, value: any) => {
+    if (editingLang === "en") {
+      if (section === "hero") setHeroData((p) => ({ ...p, [field]: value }));
+      else if (section === "about") setAboutData((p) => ({ ...p, [field]: value }));
+      else if (section === "cta") setCtaData((p) => ({ ...p, [field]: value }));
+      else if (section === "products") setProductsData((p) => ({ ...p, [field]: value }));
+      else if (section === "testimonials") setTestimonialsData((p) => ({ ...p, [field]: value }));
+      else if (section === "why_us") setWhyUsData((p) => ({ ...p, [field]: value }));
+      else if (section === "process") setProcessData((p) => ({ ...p, [field]: value }));
+      else if (section === "contact") setContactData((p) => ({ ...p, [field]: value }));
+    } else {
+      setTranslations((prev) => ({
+        ...prev,
+        [editingLang]: {
+          ...prev[editingLang],
+          [section]: {
+            ...(prev[editingLang]?.[section] || {}),
+            [field]: value,
+          },
+        },
+      }));
+    }
+  };
+
+  const getFieldValue = (section: string, field: string, enValue: any) => {
+    if (editingLang === "en") return enValue;
+    return translations[editingLang]?.[section]?.[field] ?? "";
+  };
+
+  const loadDefaultTranslation = (section: SectionTab, lang: LanguageCode) => {
+    if (lang === "en") return;
+    const target = contentByLanguage[lang];
+    if (!target) return;
+
+    let sectionContent: any = null;
+    if (section === "hero") {
+      sectionContent = {
+        badgeText: lang === "te" ? "తనుకులో విశ్వసనీయ భాగస్వామి" : "तनुकु का प्रमुख पार्टनर",
+        heading: target.heroContent.headline,
+        subheading: target.heroContent.subheadline,
+        ctaText: target.heroContent.ctaPrimary,
+        secondaryText: target.heroContent.ctaSecondary,
+      };
+    } else if (section === "about") {
+      sectionContent = {
+        sectionLabel: target.aboutContent.sectionLabel,
+        heading: target.aboutContent.heading,
+        story: target.aboutContent.paragraphs[0] || "",
+        tagline: target.aboutContent.paragraphs[1] || "",
+      };
+    } else if (section === "cta") {
+      sectionContent = {
+        heading: target.ctaBannerContent.heading,
+        subheading: target.ctaBannerContent.subheading,
+        ctaText: target.ctaBannerContent.cta,
+      };
+    } else if (section === "products") {
+      sectionContent = {
+        heading: target.productsContent.heading,
+        subheading: target.productsContent.subheading,
+      };
+    } else if (section === "why_us") {
+      sectionContent = {
+        heading: target.whyUsContent.heading,
+      };
+    } else if (section === "process") {
+      sectionContent = {
+        heading: target.processContent.heading,
+      };
+    } else if (section === "testimonials") {
+      sectionContent = {
+        heading: target.testimonialsContent.heading,
+      };
+    } else if (section === "contact") {
+      sectionContent = {
+        address: target.contactInfo.address,
+        businessHours: target.contactInfo.businessHours,
+      };
+    }
+
+    if (sectionContent) {
+      setTranslations((prev) => ({
+        ...prev,
+        [lang]: {
+          ...prev[lang],
+          [section]: {
+            ...(prev[lang]?.[section] || {}),
+            ...sectionContent,
+          },
+        },
+      }));
+      toast.success(
+        `Loaded verified ${lang === "te" ? "Telugu" : "Hindi"} text for ${section}! Click 'Save & Publish' to save.`,
+        "Translation Loaded"
+      );
+    }
+  };
+
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  const autoTranslateCurrentSection = async () => {
+    if (editingLang === "en") return;
+    setIsTranslating(true);
+
+    try {
+      let dataToTranslate: any = null;
+      if (activeTab === "hero") dataToTranslate = heroData;
+      else if (activeTab === "about") dataToTranslate = aboutData;
+      else if (activeTab === "cta") dataToTranslate = ctaData;
+      else if (activeTab === "products") dataToTranslate = productsData;
+      else if (activeTab === "why_us") dataToTranslate = whyUsData;
+      else if (activeTab === "process") dataToTranslate = processData;
+      else if (activeTab === "testimonials") dataToTranslate = testimonialsData;
+
+      if (!dataToTranslate) {
+        setIsTranslating(false);
+        return;
+      }
+
+      const res = await fetch("/api/admin/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          section: activeTab,
+          targetLang: editingLang,
+          data: dataToTranslate,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.translated) {
+        setTranslations((prev) => ({
+          ...prev,
+          [editingLang]: {
+            ...prev[editingLang],
+            [activeTab]: {
+              ...(prev[editingLang]?.[activeTab] || {}),
+              ...json.translated,
+            },
+          },
+        }));
+        toast.success(
+          `✨ Automatically translated ${activeTab} into ${editingLang === "te" ? "Telugu" : "Hindi"}!`,
+          "Auto-Translation Complete"
+        );
+      }
+    } catch {
+      toast.error("Auto-translation failed. Please try again.", "Translation Error");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   // Fetch saved dynamic content from Supabase on mount
   useEffect(() => {
     setIsLoading(true);
@@ -292,7 +457,17 @@ export default function WebsiteContentPage() {
       .then((r) => r.json())
       .then((res) => {
         if (res.data && Array.isArray(res.data)) {
+          const loadedTranslations: { te: Record<string, any>; hi: Record<string, any> } = {
+            te: {},
+            hi: {},
+          };
           for (const item of res.data) {
+            if (item.content?.translations?.te) {
+              loadedTranslations.te[item.section] = item.content.translations.te;
+            }
+            if (item.content?.translations?.hi) {
+              loadedTranslations.hi[item.section] = item.content.translations.hi;
+            }
             if (item.section === "hero" && item.content) setHeroData((prev) => ({ ...prev, ...item.content }));
             if (item.section === "about" && item.content) setAboutData((prev) => ({ ...prev, ...item.content }));
             if (item.section === "stats" && item.content) setStatsData((prev) => ({ ...prev, ...item.content }));
@@ -303,6 +478,7 @@ export default function WebsiteContentPage() {
             if (item.section === "why_us" && item.content) setWhyUsData((prev) => ({ ...prev, ...item.content }));
             if (item.section === "process" && item.content) setProcessData((prev) => ({ ...prev, ...item.content }));
           }
+          setTranslations(loadedTranslations);
         }
       })
       .catch((err) => console.warn("Could not load dynamic website content:", err))
@@ -319,15 +495,63 @@ export default function WebsiteContentPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          hero: heroData,
-          about: aboutData,
+          hero: {
+            ...heroData,
+            translations: {
+              te: translations.te.hero,
+              hi: translations.hi.hero,
+            },
+          },
+          about: {
+            ...aboutData,
+            translations: {
+              te: translations.te.about,
+              hi: translations.hi.about,
+            },
+          },
           stats: statsData,
-          contact: contactData,
-          products: productsData,
-          testimonials: testimonialsData,
-          cta: ctaData,
-          why_us: whyUsData,
-          process: processData,
+          contact: {
+            ...contactData,
+            translations: {
+              te: translations.te.contact,
+              hi: translations.hi.contact,
+            },
+          },
+          products: {
+            ...productsData,
+            translations: {
+              te: translations.te.products,
+              hi: translations.hi.products,
+            },
+          },
+          testimonials: {
+            ...testimonialsData,
+            translations: {
+              te: translations.te.testimonials,
+              hi: translations.hi.testimonials,
+            },
+          },
+          cta: {
+            ...ctaData,
+            translations: {
+              te: translations.te.cta,
+              hi: translations.hi.cta,
+            },
+          },
+          why_us: {
+            ...whyUsData,
+            translations: {
+              te: translations.te.why_us,
+              hi: translations.hi.why_us,
+            },
+          },
+          process: {
+            ...processData,
+            translations: {
+              te: translations.te.process,
+              hi: translations.hi.process,
+            },
+          },
         }),
       });
 
@@ -377,6 +601,10 @@ export default function WebsiteContentPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Auto-translates to Telugu &amp; Hindi</span>
+            </div>
             <Link
               href="/"
               target="_blank"
@@ -432,6 +660,83 @@ export default function WebsiteContentPage() {
 
           {/* Form Content Area */}
           <div className="p-4 sm:p-6 md:p-8">
+            {/* Multilingual Selector Toolbar for Content Sections */}
+            {activeTab !== "stats" && (
+              <div className="mb-6 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-200 font-bold">
+                    <Languages className="w-4 h-4 text-amber-500" />
+                    <span>Content Language:</span>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => setEditingLang("en")}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                        editingLang === "en"
+                          ? "bg-amber-500 text-slate-950 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      }`}
+                    >
+                      🇬🇧 English
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingLang("te")}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                        editingLang === "te"
+                          ? "bg-amber-500 text-slate-950 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      }`}
+                    >
+                      🇮🇳 తెలుగు
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingLang("hi")}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                        editingLang === "hi"
+                          ? "bg-amber-500 text-slate-950 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      }`}
+                    >
+                      🇮🇳 हिन्दी
+                    </button>
+                  </div>
+                </div>
+
+                {editingLang !== "en" && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={autoTranslateCurrentSection}
+                      disabled={isTranslating}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 transition cursor-pointer shadow-xs"
+                    >
+                      {isTranslating ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5" />
+                      )}
+                      <span>
+                        {isTranslating
+                          ? "Translating..."
+                          : `⚡ Auto-Translate to ${editingLang === "te" ? "Telugu" : "Hindi"}`}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadDefaultTranslation(activeTab, editingLang)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition cursor-pointer"
+                      title="Load standard pre-verified translation"
+                    >
+                      Reset to Default
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 1. HERO BANNER */}
             {activeTab === "hero" && (
               <div className="space-y-5 max-w-3xl text-xs">
@@ -441,8 +746,8 @@ export default function WebsiteContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={heroData.badgeText}
-                    onChange={(e) => setHeroData({ ...heroData, badgeText: e.target.value })}
+                    value={getFieldValue("hero", "badgeText", heroData.badgeText)}
+                    onChange={(e) => updateField("hero", "badgeText", e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5"
                   />
                 </div>
@@ -453,8 +758,8 @@ export default function WebsiteContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={heroData.heading}
-                    onChange={(e) => setHeroData({ ...heroData, heading: e.target.value })}
+                    value={getFieldValue("hero", "heading", heroData.heading)}
+                    onChange={(e) => updateField("hero", "heading", e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 font-bold text-sm"
                   />
                 </div>
@@ -465,8 +770,8 @@ export default function WebsiteContentPage() {
                   </label>
                   <textarea
                     rows={3}
-                    value={heroData.subheading}
-                    onChange={(e) => setHeroData({ ...heroData, subheading: e.target.value })}
+                    value={getFieldValue("hero", "subheading", heroData.subheading)}
+                    onChange={(e) => updateField("hero", "subheading", e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 leading-relaxed"
                   />
                 </div>
@@ -478,8 +783,8 @@ export default function WebsiteContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={heroData.ctaText}
-                      onChange={(e) => setHeroData({ ...heroData, ctaText: e.target.value })}
+                      value={getFieldValue("hero", "ctaText", heroData.ctaText)}
+                      onChange={(e) => updateField("hero", "ctaText", e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5"
                     />
                   </div>
@@ -490,8 +795,8 @@ export default function WebsiteContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={heroData.secondaryText}
-                      onChange={(e) => setHeroData({ ...heroData, secondaryText: e.target.value })}
+                      value={getFieldValue("hero", "secondaryText", heroData.secondaryText)}
+                      onChange={(e) => updateField("hero", "secondaryText", e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5"
                     />
                   </div>
@@ -533,8 +838,8 @@ export default function WebsiteContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={aboutData.sectionLabel}
-                      onChange={(e) => setAboutData({ ...aboutData, sectionLabel: e.target.value })}
+                      value={getFieldValue("about", "sectionLabel", aboutData.sectionLabel)}
+                      onChange={(e) => updateField("about", "sectionLabel", e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5"
                     />
                   </div>
@@ -544,8 +849,8 @@ export default function WebsiteContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={aboutData.heading}
-                      onChange={(e) => setAboutData({ ...aboutData, heading: e.target.value })}
+                      value={getFieldValue("about", "heading", aboutData.heading)}
+                      onChange={(e) => updateField("about", "heading", e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 font-bold"
                     />
                   </div>
@@ -557,8 +862,8 @@ export default function WebsiteContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={aboutData.tagline}
-                    onChange={(e) => setAboutData({ ...aboutData, tagline: e.target.value })}
+                    value={getFieldValue("about", "tagline", aboutData.tagline)}
+                    onChange={(e) => updateField("about", "tagline", e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5"
                   />
                 </div>
@@ -569,8 +874,8 @@ export default function WebsiteContentPage() {
                   </label>
                   <textarea
                     rows={5}
-                    value={aboutData.story}
-                    onChange={(e) => setAboutData({ ...aboutData, story: e.target.value })}
+                    value={getFieldValue("about", "story", aboutData.story)}
+                    onChange={(e) => updateField("about", "story", e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 leading-relaxed"
                   />
                 </div>
@@ -580,6 +885,43 @@ export default function WebsiteContentPage() {
             {/* 3. LIVE NUMBERS / STATISTICS */}
             {activeTab === "stats" && (
               <div className="space-y-5 max-w-3xl text-xs">
+                {/* 3-Language Auto-Sync Banner */}
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Universal Live Metrics — Automatically Synchronized in 3 Languages</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                    You only enter the numbers once. The system automatically formats and animates them with native localized labels across all 3 languages:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-[11px]">
+                    <div className="p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 space-y-1">
+                      <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>🇬🇧 English</span>
+                      </div>
+                      <div className="text-slate-500 text-[10px]">
+                        {statsData.yearsExperience}+ Years Exp • {statsData.projectsCompleted}+ Projects • {statsData.happyClients}+ Clients • {statsData.districtsCovered}+ Districts
+                      </div>
+                    </div>
+                    <div className="p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 space-y-1">
+                      <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>🇮🇳 తెలుగు (Telugu)</span>
+                      </div>
+                      <div className="text-slate-500 text-[10px]">
+                        {statsData.yearsExperience}+ సం. అనుభవం • {statsData.projectsCompleted}+ ప్రాజెక్టులు • {statsData.happyClients}+ కస్టమర్లు • {statsData.districtsCovered}+ జిల్లాలు
+                      </div>
+                    </div>
+                    <div className="p-2.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 space-y-1">
+                      <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>🇮🇳 हिन्दी (Hindi)</span>
+                      </div>
+                      <div className="text-slate-500 text-[10px]">
+                        {statsData.yearsExperience}+ वर्ष अनुभव • {statsData.projectsCompleted}+ प्रोजेक्ट • {statsData.happyClients}+ ग्राहक • {statsData.districtsCovered}+ जिले
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <p className="text-slate-500">
                   These 4 live counters animate when visitors scroll down on your landing page.
                 </p>
@@ -762,8 +1104,8 @@ export default function WebsiteContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={productsData.heading}
-                      onChange={(e) => setProductsData({ ...productsData, heading: e.target.value })}
+                      value={getFieldValue("products", "heading", productsData.heading)}
+                      onChange={(e) => updateField("products", "heading", e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 font-bold"
                     />
                   </div>
@@ -773,8 +1115,8 @@ export default function WebsiteContentPage() {
                     </label>
                     <input
                       type="text"
-                      value={productsData.subheading}
-                      onChange={(e) => setProductsData({ ...productsData, subheading: e.target.value })}
+                      value={getFieldValue("products", "subheading", productsData.subheading)}
+                      onChange={(e) => updateField("products", "subheading", e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5"
                     />
                   </div>
@@ -893,10 +1235,8 @@ export default function WebsiteContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={testimonialsData.heading}
-                    onChange={(e) =>
-                      setTestimonialsData({ ...testimonialsData, heading: e.target.value })
-                    }
+                    value={getFieldValue("testimonials", "heading", testimonialsData.heading)}
+                    onChange={(e) => updateField("testimonials", "heading", e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 font-bold"
                   />
                 </div>
@@ -1037,8 +1377,8 @@ export default function WebsiteContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={ctaData.heading}
-                    onChange={(e) => setCtaData({ ...ctaData, heading: e.target.value })}
+                    value={getFieldValue("cta", "heading", ctaData.heading)}
+                    onChange={(e) => updateField("cta", "heading", e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 font-bold text-sm"
                   />
                 </div>
@@ -1049,8 +1389,8 @@ export default function WebsiteContentPage() {
                   </label>
                   <textarea
                     rows={3}
-                    value={ctaData.subheading}
-                    onChange={(e) => setCtaData({ ...ctaData, subheading: e.target.value })}
+                    value={getFieldValue("cta", "subheading", ctaData.subheading)}
+                    onChange={(e) => updateField("cta", "subheading", e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 leading-relaxed"
                   />
                 </div>
@@ -1061,8 +1401,8 @@ export default function WebsiteContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={ctaData.ctaText}
-                    onChange={(e) => setCtaData({ ...ctaData, ctaText: e.target.value })}
+                    value={getFieldValue("cta", "ctaText", ctaData.ctaText)}
+                    onChange={(e) => updateField("cta", "ctaText", e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 font-bold"
                   />
                 </div>
@@ -1078,8 +1418,8 @@ export default function WebsiteContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={whyUsData.heading}
-                    onChange={(e) => setWhyUsData({ ...whyUsData, heading: e.target.value })}
+                    value={getFieldValue("why_us", "heading", whyUsData.heading)}
+                    onChange={(e) => updateField("why_us", "heading", e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 font-bold"
                   />
                 </div>
@@ -1138,8 +1478,8 @@ export default function WebsiteContentPage() {
                   </label>
                   <input
                     type="text"
-                    value={processData.heading}
-                    onChange={(e) => setProcessData({ ...processData, heading: e.target.value })}
+                    value={getFieldValue("process", "heading", processData.heading)}
+                    onChange={(e) => updateField("process", "heading", e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 font-bold"
                   />
                 </div>
