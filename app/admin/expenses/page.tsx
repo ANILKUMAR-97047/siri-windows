@@ -34,6 +34,8 @@ import {
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { toast, confirmModal } from "@/components/ui/ToastProvider";
 import { CustomSelect } from "@/components/ui/Select";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queries";
 
 interface AdminExpense {
   id: string;
@@ -107,6 +109,7 @@ function formatDateDisplay(dateStr: string): string {
 }
 
 export default function AdminExpensesPage() {
+  const queryClient = useQueryClient();
   const [expenses, setExpenses] = useState<AdminExpense[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -288,6 +291,7 @@ export default function AdminExpensesPage() {
         const json = await res.json();
         if (res.ok) {
           toast.success("Daily expense logged successfully!");
+          queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all });
           setIsModalOpen(false);
           fetchExpenses();
         } else {
@@ -302,6 +306,7 @@ export default function AdminExpensesPage() {
         const json = await res.json();
         if (res.ok) {
           toast.success("Expense updated successfully!");
+          queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all });
           setIsModalOpen(false);
           fetchExpenses();
         } else {
@@ -332,6 +337,7 @@ export default function AdminExpensesPage() {
       });
       if (res.ok) {
         toast.success("Expense record deleted successfully");
+        queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all });
         fetchExpenses();
       } else {
         const json = await res.json();

@@ -27,6 +27,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { CustomSelect } from "@/components/ui/Select";
+import { useQueryClient } from "@tanstack/react-query";
+import { useClientsQuery, useStaffListQuery, queryKeys } from "@/lib/queries";
 
 interface StaffRef {
   id: string;
@@ -83,11 +85,32 @@ interface Client {
 }
 
 export default function ClientsPage() {
+  const queryClient = useQueryClient();
+  const { data: cachedClients = [], isLoading: queryLoading, refetch: refetchClients } = useClientsQuery();
+  const { data: cachedStaff = [] } = useStaffListQuery();
+
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "completed" | "prospect">("all");
+
+  // Sync clients instantly from TanStack Query cache (0ms latency)
+  useEffect(() => {
+    if (cachedClients && cachedClients.length > 0) {
+      setClients(cachedClients as unknown as Client[]);
+      setLoading(false);
+    } else if (!queryLoading) {
+      setLoading(false);
+    }
+  }, [cachedClients, queryLoading]);
+
+  // Sync staff list instantly from cache for supervisor assignments
+  useEffect(() => {
+    if (cachedStaff && cachedStaff.length > 0) {
+      setStaffList(cachedStaff as unknown as StaffRef[]);
+    }
+  }, [cachedStaff]);
 
   // Notification Toast
   const [notification, setNotification] = useState<{
@@ -378,6 +401,7 @@ export default function ClientsPage() {
         }
 
         setClients((prev) => [data as unknown as Client, ...prev]);
+        queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
         showToast("success", `Client "${clientForm.name}" onboarded to Supabase.`);
       }
 
@@ -404,6 +428,7 @@ export default function ClientsPage() {
       }
 
       setClients((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
       showToast("success", `Client "${deleteTarget.name}" deleted successfully.`);
       setDeleteTarget(null);
     } catch (err: any) {

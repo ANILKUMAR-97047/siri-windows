@@ -30,6 +30,8 @@ import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { toast } from "@/components/ui/ToastProvider";
 import { CustomSelect } from "@/components/ui/Select";
+import { useQueryClient } from "@tanstack/react-query";
+import { useStaffListQuery, queryKeys } from "@/lib/queries";
 
 interface StaffDetails {
   id: string;
@@ -93,10 +95,20 @@ function formatDate(dateStr?: string | null): string {
 }
 
 export default function SalariesPage() {
+  const queryClient = useQueryClient();
+  const { data: cachedStaff = [] } = useStaffListQuery();
+
   const [staffList, setStaffList] = useState<StaffDetails[]>([]);
   const [records, setRecords] = useState<SalaryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+
+  // Sync staff list instantly from TanStack Query cache
+  useEffect(() => {
+    if (cachedStaff && cachedStaff.length > 0) {
+      setStaffList(cachedStaff as unknown as StaffDetails[]);
+    }
+  }, [cachedStaff]);
 
   // Filters
   const [filterMonth, setFilterMonth] = useState("all");
@@ -638,6 +650,8 @@ export default function SalariesPage() {
         // zero advances are marked settled! They remain pending and carry forward to next month automatically.
 
         toast.success("Salary payout recorded successfully!");
+        queryClient.invalidateQueries({ queryKey: queryKeys.salaries.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.advances.all });
         setRecords((prev) => {
           const filtered = prev.filter((r) => r.id !== data.id);
           return [data as unknown as SalaryRecord, ...filtered];
@@ -684,6 +698,7 @@ export default function SalariesPage() {
       fetchData();
     } else {
       toast.success("Salary marked as PAID successfully!");
+      queryClient.invalidateQueries({ queryKey: queryKeys.salaries.all });
     }
   };
 
@@ -722,6 +737,7 @@ export default function SalariesPage() {
       fetchData();
     } else {
       toast.info("Staff member marked as ON LEAVE for this month.");
+      queryClient.invalidateQueries({ queryKey: queryKeys.salaries.all });
     }
   };
 

@@ -16,6 +16,8 @@ import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { toast } from "@/components/ui/ToastProvider";
 import { CustomSelect } from "@/components/ui/Select";
+import { useQueryClient } from "@tanstack/react-query";
+import { useMaterialsQuery, queryKeys } from "@/lib/queries";
 
 interface Material {
   id: string;
@@ -41,24 +43,25 @@ export default function StockPage() {
 
   const [transactionQty, setTransactionQty] = useState(10);
 
+  const queryClient = useQueryClient();
+  const { data: cachedMaterials = [], isLoading: queryLoading, refetch: refetchMaterials } = useMaterialsQuery();
   const supabase = createClient();
+
+  // Instant zero-latency loading from cache
+  useEffect(() => {
+    if (cachedMaterials && cachedMaterials.length > 0) {
+      setMaterials(cachedMaterials as unknown as Material[]);
+      setLoading(false);
+    } else if (!queryLoading) {
+      setLoading(false);
+    }
+  }, [cachedMaterials, queryLoading]);
 
   const fetchMaterials = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("materials")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setMaterials(data as unknown as Material[]);
-    }
+    await refetchMaterials();
     setLoading(false);
   };
-
-  useEffect(() => {
-    fetchMaterials();
-  }, []);
 
   // New Item State
   const [newItem, setNewItem] = useState({
@@ -91,6 +94,7 @@ export default function StockPage() {
 
     if (!error && data) {
       setMaterials([data[0], ...materials]);
+      queryClient.invalidateQueries({ queryKey: queryKeys.materials.all });
       toast.success("New material added to inventory successfully!");
       setIsNewItemModal(false);
       setNewItem({
@@ -139,6 +143,7 @@ export default function StockPage() {
       },
     ]);
 
+    queryClient.invalidateQueries({ queryKey: queryKeys.materials.all });
     toast.success(`Inventory updated: ${type} ${qty} ${material.unit} recorded!`);
     setTransactionModal({ open: false, type: "IN" });
   };

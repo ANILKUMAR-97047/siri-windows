@@ -22,6 +22,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { CustomSelect } from "@/components/ui/Select";
+import { useQueryClient } from "@tanstack/react-query";
+import { useProjectsQuery, useClientsQuery, useStaffListQuery, queryKeys } from "@/lib/queries";
 
 interface ClientRef {
   id: string;
@@ -65,6 +67,11 @@ interface ProjectRecord {
 }
 
 export default function ProjectsPage() {
+  const queryClient = useQueryClient();
+  const { data: cachedProjects = [], isLoading: queryLoading, refetch: refetchProjects } = useProjectsQuery();
+  const { data: cachedClients = [] } = useClientsQuery();
+  const { data: cachedStaff = [] } = useStaffListQuery();
+
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
   const [clientsList, setClientsList] = useState<ClientRef[]>([]);
   const [staffList, setStaffList] = useState<StaffRef[]>([]);
@@ -72,6 +79,32 @@ export default function ProjectsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Instant zero-latency loading from cache
+  useEffect(() => {
+    if (cachedProjects && cachedProjects.length > 0) {
+      const formatted = (cachedProjects as unknown as ProjectRecord[]).map((p) => {
+        const { progress, stage } = getStageAndProgress(p.status, p.progress);
+        return { ...p, progress, stage };
+      });
+      setProjects(formatted);
+      setLoading(false);
+    } else if (!queryLoading) {
+      setLoading(false);
+    }
+  }, [cachedProjects, queryLoading]);
+
+  useEffect(() => {
+    if (cachedClients && cachedClients.length > 0) {
+      setClientsList(cachedClients as unknown as ClientRef[]);
+    }
+  }, [cachedClients]);
+
+  useEffect(() => {
+    if (cachedStaff && cachedStaff.length > 0) {
+      setStaffList(cachedStaff as unknown as StaffRef[]);
+    }
+  }, [cachedStaff]);
 
   // Modals state
   // Payment Recording Modal State
@@ -292,6 +325,8 @@ export default function ProjectsPage() {
         "success",
         `Payment of ₹${addedAmount.toLocaleString("en-IN")} recorded for ${paymentProject.title}!`
       );
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
       setPaymentProject(null);
       setPaymentAmount("");
     } catch (err: any) {
@@ -312,6 +347,8 @@ export default function ProjectsPage() {
       if (error) throw error;
 
       setProjects((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
       showToast("success", `Project "${deleteTarget.title}" deleted.`);
       setDeleteTarget(null);
     } catch (err: any) {

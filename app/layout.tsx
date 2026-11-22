@@ -3,6 +3,7 @@ import { Poppins, Manrope } from "next/font/google";
 import "./globals.css";
 import { siteMeta } from "@/lib/content";
 import { ToastProvider } from "@/components/ui/ToastProvider";
+import QueryProvider from "@/components/providers/QueryProvider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -70,7 +71,9 @@ export default function RootLayout({
       className={`${poppins.variable} ${manrope.variable} antialiased`}
     >
       <body className="min-h-screen flex flex-col bg-background text-foreground font-sans">
-        <ToastProvider>{children}</ToastProvider>
+        <QueryProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </QueryProvider>
       </body>
     </html>
   );

@@ -28,6 +28,8 @@ import {
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { toast, confirmModal } from "@/components/ui/ToastProvider";
 import { CustomSelect } from "@/components/ui/Select";
+import { useQueryClient } from "@tanstack/react-query";
+import { useStaffListQuery, queryKeys } from "@/lib/queries";
 
 interface StaffMember {
   id: string;
@@ -88,9 +90,19 @@ function formatDateDisplay(dateStr: string): string {
 }
 
 export default function StaffAdvancesPage() {
+  const queryClient = useQueryClient();
+  const { data: cachedStaff = [] } = useStaffListQuery();
+
   const [advances, setAdvances] = useState<StaffAdvance[]>([]);
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Sync staff list instantly from TanStack Query cache
+  useEffect(() => {
+    if (cachedStaff && cachedStaff.length > 0) {
+      setStaffList(cachedStaff as unknown as StaffMember[]);
+    }
+  }, [cachedStaff]);
 
   // Date filters
   const now = new Date();
@@ -285,6 +297,8 @@ export default function StaffAdvancesPage() {
         const json = await res.json();
         if (res.ok) {
           toast.success("Employee salary advance logged successfully!");
+          queryClient.invalidateQueries({ queryKey: queryKeys.advances.all });
+          queryClient.invalidateQueries({ queryKey: queryKeys.salaries.all });
           setIsModalOpen(false);
           fetchAdvances();
         } else {
@@ -299,6 +313,8 @@ export default function StaffAdvancesPage() {
         const json = await res.json();
         if (res.ok) {
           toast.success("Advance record updated successfully!");
+          queryClient.invalidateQueries({ queryKey: queryKeys.advances.all });
+          queryClient.invalidateQueries({ queryKey: queryKeys.salaries.all });
           setIsModalOpen(false);
           fetchAdvances();
         } else {
@@ -329,6 +345,8 @@ export default function StaffAdvancesPage() {
       });
       if (res.ok) {
         toast.success("Advance record deleted successfully");
+        queryClient.invalidateQueries({ queryKey: queryKeys.advances.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.salaries.all });
         fetchAdvances();
       } else {
         const json = await res.json();

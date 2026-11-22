@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { CustomSelect } from "@/components/ui/Select";
+import { useQueryClient } from "@tanstack/react-query";
+import { useLeadsQuery, queryKeys } from "@/lib/queries";
 
 function WhatsAppIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
   return (
@@ -84,25 +86,25 @@ export default function LeadsPage() {
     }, 4500);
   };
 
+  const queryClient = useQueryClient();
+  const { data: cachedLeads = [], isLoading: queryLoading, refetch: refetchLeads } = useLeadsQuery();
+
+  // Instant zero-latency loading from cache
+  useEffect(() => {
+    if (cachedLeads && cachedLeads.length > 0) {
+      setLeads(cachedLeads as unknown as Lead[]);
+      setLoading(false);
+    } else if (!queryLoading) {
+      setLoading(false);
+    }
+  }, [cachedLeads, queryLoading]);
+
   // Fetch leads from server API
   const fetchLeads = async () => {
     setLoading(true);
-    try {
-      const res = await fetch("/api/admin/leads");
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        setLeads(json.data);
-      }
-    } catch (e) {
-      console.error("Failed to fetch leads:", e);
-    } finally {
-      setLoading(false);
-    }
+    await refetchLeads();
+    setLoading(false);
   };
-
-  useEffect(() => {
-    fetchLeads();
-  }, []);
 
   // Form state for adding new lead
   const [newLead, setNewLead] = useState<{
@@ -171,6 +173,7 @@ export default function LeadsPage() {
       const json = await res.json();
       if (json.success && json.data) {
         setLeads([json.data, ...leads]);
+        queryClient.invalidateQueries({ queryKey: queryKeys.leads.all });
         setIsModalOpen(false);
         setNewLead({
           name: "",
@@ -205,7 +208,9 @@ export default function LeadsPage() {
       });
       const json = await res.json();
       if (json.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.leads.all });
         if (newStatus === "won") {
+          queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
           showToast(
             "success",
             "Lead converted to Client! Successfully added to Clients & Quotes directory."

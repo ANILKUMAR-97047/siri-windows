@@ -24,6 +24,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useStaffListQuery, queryKeys } from "@/lib/queries";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { toast } from "@/components/ui/ToastProvider";
 import { CustomSelect } from "@/components/ui/Select";
@@ -53,24 +55,25 @@ export default function StaffPage() {
   } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  const queryClient = useQueryClient();
+  const { data: cachedStaff, isLoading: queryLoading, refetch: refetchStaff } = useStaffListQuery();
   const supabase = createClient();
+
+  // Instant zero-latency loading from cache
+  useEffect(() => {
+    if (cachedStaff && cachedStaff.length > 0) {
+      setStaffList(cachedStaff as unknown as StaffMember[]);
+      setLoading(false);
+    } else if (!queryLoading) {
+      setLoading(false);
+    }
+  }, [cachedStaff, queryLoading]);
 
   const fetchStaff = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("staff")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setStaffList(data as unknown as StaffMember[]);
-    }
+    await refetchStaff();
     setLoading(false);
   };
-
-  useEffect(() => {
-    fetchStaff();
-  }, []);
 
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [formData, setFormData] = useState({
@@ -208,6 +211,7 @@ export default function StaffPage() {
         }
 
         toast.success("Staff profile updated successfully!");
+        queryClient.invalidateQueries({ queryKey: queryKeys.staff.all });
         setIsModalOpen(false);
         setEditingStaff(null);
       } else if (error) {
@@ -232,6 +236,7 @@ export default function StaffPage() {
 
       if (!error && data) {
         setStaffList([data[0] as unknown as StaffMember, ...staffList]);
+        queryClient.invalidateQueries({ queryKey: queryKeys.staff.all });
         toast.success("New staff member added successfully!");
         setIsModalOpen(false);
       } else if (error) {
