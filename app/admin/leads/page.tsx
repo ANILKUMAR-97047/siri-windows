@@ -293,7 +293,7 @@ export default function LeadsPage() {
             onClick={fetchLeads}
             disabled={loading}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold transition"
-            title="Refresh Leads from Database"
+            title="Refresh Leads"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -351,7 +351,7 @@ export default function LeadsPage() {
         {loading ? (
           <div className="p-12 text-center text-xs text-slate-400 flex flex-col items-center gap-2">
             <RefreshCw className="w-5 h-5 animate-spin text-amber-500" />
-            <span>Loading leads from Supabase...</span>
+            <span>Loading leads...</span>
           </div>
         ) : filteredLeads.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-400">
@@ -510,7 +510,7 @@ export default function LeadsPage() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                 <Plus className="w-4 h-4 text-amber-500" />
-                Register New Lead (Inserts to Supabase)
+                Register New Lead
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -681,7 +681,7 @@ export default function LeadsPage() {
                   type="submit"
                   className="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition shadow-sm"
                 >
-                  Save to Supabase
+                  Save Lead
                 </button>
               </div>
             </form>

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   Menu,
-  Search,
   Sparkles,
   LogOut,
   Shield,
@@ -137,21 +136,11 @@ export default function AdminHeader() {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-          {/* Global Search Bar */}
-          <div className="relative hidden xl:block w-56">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search leads, stock, staff..."
-              className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
-            />
-          </div>
-
-          {/* Database Status indicator */}
+          {/* System Status indicator */}
           <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 sm:px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
             <span className="hidden sm:inline font-medium text-slate-700 dark:text-slate-300 text-[11px]">
-              Supabase DB
+              System Online
             </span>
           </div>
 

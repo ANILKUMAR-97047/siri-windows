@@ -97,7 +97,7 @@ export default function GalleryPage() {
       }
     } catch (err: any) {
       console.error("Error loading gallery data:", err);
-      toast.error("Failed to load gallery items from database.", "Load Error");
+      toast.error("Failed to load gallery items.", "Load Error");
     } finally {
       setIsLoading(false);
     }
@@ -205,7 +205,7 @@ export default function GalleryPage() {
           loadGallery();
         }
 
-        toast.success("Photo added to website gallery and database successfully!");
+        toast.success("Photo added to website gallery successfully!");
       } else {
         toast.error(json.error || "Could not save photo to gallery.", "Save Error");
       }
@@ -294,7 +294,7 @@ export default function GalleryPage() {
     const confirmed = await confirmModal({
       title: "Remove Photo from Gallery?",
       message:
-        "Are you sure you want to remove this photograph from the website gallery display and database?",
+        "Are you sure you want to remove this photograph from the website gallery display?",
       type: "danger",
       confirmText: "Delete Photo",
       cancelText: "Keep Photo",
@@ -394,7 +394,7 @@ export default function GalleryPage() {
         {isLoading ? (
           <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-            <p className="text-xs">Loading portfolio images from database...</p>
+            <p className="text-xs">Loading portfolio images...</p>
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 p-8">
@@ -541,7 +541,7 @@ export default function GalleryPage() {
                         autoFocus
                       />
                       <span className="text-[10px] text-slate-400">
-                        This category will be automatically created in your database and shown on the website.
+                        This category will be automatically created and shown on the website.
                       </span>
                     </div>
                   ) : (
@@ -669,7 +669,7 @@ export default function GalleryPage() {
                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs font-mono"
                       />
                       <span className="text-[10px] text-slate-400">
-                        Paste Supabase Storage CDN URL or local path.
+                        Paste image CDN URL or local path.
                       </span>
                     </div>
                   )}

@@ -1810,7 +1810,7 @@ export default function WebsiteContentPage() {
             {/* Bottom Save Action Bar */}
             <div className="pt-6 mt-8 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <span className="text-slate-400 text-[11px]">
-                Clicking save updates the live database and reflects on the website instantly.
+                Clicking save reflects your changes on the website instantly.
               </span>
               <button
                 type="button"

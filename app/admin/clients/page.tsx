@@ -248,7 +248,7 @@ export default function ClientsPage() {
 
       if (error) {
         console.error("Error fetching clients:", error);
-        showToast("error", "Failed to fetch clients from database: " + error.message);
+        showToast("error", "Failed to fetch clients: " + error.message);
       } else if (data) {
         const clientList = data as unknown as Client[];
         setClients(clientList);
@@ -402,14 +402,14 @@ export default function ClientsPage() {
 
         setClients((prev) => [data as unknown as Client, ...prev]);
         queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
-        showToast("success", `Client "${clientForm.name}" onboarded to Supabase.`);
+        showToast("success", `Client "${clientForm.name}" onboarded successfully.`);
       }
 
       setIsClientModalOpen(false);
       setEditingClient(null);
     } catch (err: any) {
       console.error("Error saving client:", err);
-      showToast("error", err.message || "Failed to save client to Supabase.");
+      showToast("error", err.message || "Failed to save client.");
     } finally {
       setSubmittingClient(false);
     }
@@ -433,7 +433,7 @@ export default function ClientsPage() {
       setDeleteTarget(null);
     } catch (err: any) {
       console.error("Error deleting client:", err);
-      showToast("error", err.message || "Failed to delete client from database.");
+      showToast("error", err.message || "Failed to delete client.");
     } finally {
       setIsDeleting(false);
     }
@@ -531,7 +531,7 @@ export default function ClientsPage() {
       fetchClients(true);
     } catch (err: any) {
       console.error("Error saving quote:", err);
-      showToast("error", err.message || "Failed to save quote to Supabase.");
+      showToast("error", err.message || "Failed to save quote.");
     } finally {
       setIsSavingQuote(false);
     }
@@ -705,7 +705,7 @@ export default function ClientsPage() {
             <button
               onClick={() => fetchClients(true)}
               disabled={refreshing || loading}
-              title="Refresh Clients from Supabase"
+              title="Refresh Clients"
               className="inline-flex items-center justify-center p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition border border-slate-200 dark:border-slate-700 cursor-pointer disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-amber-500" : ""}`} />
@@ -789,7 +789,7 @@ export default function ClientsPage() {
           <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800">
             <Loader2 className="w-8 h-8 text-amber-500 animate-spin mb-3" />
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Loading dynamic clients directory from Supabase...
+              Loading clients directory...
             </p>
           </div>
         )}
@@ -1801,7 +1801,7 @@ export default function ClientsPage() {
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
                     &quot;{deleteTarget.name}&quot;
                   </span>
-                  ? This will remove the client profile and associated records from the database.
+                  ? This will remove the client profile and associated records permanently.
                 </p>
               </div>
 

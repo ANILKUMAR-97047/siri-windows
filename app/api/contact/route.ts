@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { sendCustomerInquiryConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +16,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Try saving lead to Supabase
+    const trimmedEmail = email && typeof email === "string" ? email.trim() : null;
+
+    // Save lead to database
     try {
       const supabase = getAdminClient();
       const { error } = await (supabase.from("leads" as any) as any).insert([
@@ -23,7 +26,7 @@ export async function POST(request: Request) {
           name: name.trim(),
           phone: phone.trim(),
           city: customerCity,
-          email: email?.trim() || null,
+          email: trimmedEmail || null,
           product_interest: product || "General Inquiry",
           notes: message.trim(),
           source: "Website",
@@ -39,6 +42,23 @@ export async function POST(request: Request) {
       }
     } catch (dbErr: any) {
       console.warn("Supabase lead logging error:", dbErr?.message);
+    }
+
+    // Send confirmation email to customer ONLY IF customer provided an email address
+    if (trimmedEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      try {
+        await sendCustomerInquiryConfirmationEmail({
+          to: trimmedEmail,
+          name: name.trim(),
+          city: customerCity,
+          product: product || "UPVC & Aluminium Windows / Doors",
+          message: message.trim(),
+        });
+        console.log("✅ Confirmation email sent to customer:", trimmedEmail);
+      } catch (mailErr: any) {
+        // Log error without blocking customer response
+        console.error("Error sending customer inquiry confirmation email:", mailErr);
+      }
     }
 
     return NextResponse.json(

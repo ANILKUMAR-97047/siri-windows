@@ -120,7 +120,7 @@ export default function StockPage() {
       refetchCategories(),
       refetchTransactions(),
     ]);
-    toast.success("Stock inventory synced from database");
+    toast.success("Stock inventory updated successfully");
   };
 
   // Open transaction modal
@@ -531,7 +531,7 @@ export default function StockPage() {
               onClick={handleRefreshAll}
               disabled={materialsLoading || txLoading}
               className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
-              title="Refresh Stock from Database"
+              title="Refresh Stock Inventory"
             >
               <RefreshCw
                 className={`w-4 h-4 ${materialsLoading || txLoading ? "animate-spin text-amber-500" : ""
@@ -1295,7 +1295,7 @@ export default function StockPage() {
                         : "bg-amber-500 hover:bg-amber-400 text-slate-950"
                       }`}
                   >
-                    {isSubmittingTx ? "Saving to Database..." : `Confirm ${transactionModal.type === "IN" ? "Inward (+)" : "Outward (↗)"}`}
+                    {isSubmittingTx ? "Saving..." : `Confirm ${transactionModal.type === "IN" ? "Inward (+)" : "Outward (↗)"}`}
                   </button>
                 </div>
               </form>

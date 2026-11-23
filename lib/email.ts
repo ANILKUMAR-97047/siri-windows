@@ -210,3 +210,258 @@ export async function sendPasswordResetEmail({
 
   return { success: true, messageId: info.messageId };
 }
+
+export interface SendCustomerInquiryOptions {
+  to: string;
+  name: string;
+  city?: string;
+  product?: string;
+  message?: string;
+}
+
+function escapeHtml(str: string): string {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Send official confirmation email to customer after contact form submission
+export async function sendCustomerInquiryConfirmationEmail({
+  to,
+  name,
+  city,
+  product,
+  message,
+}: SendCustomerInquiryOptions): Promise<{ success: boolean; messageId?: string }> {
+  const transporter = getMailTransporter();
+  const fromAddress =
+    process.env.MAIL_FROM ||
+    `"Siri Windows & Doors" <${process.env.SMTP_USER || "sirienterprises8003@gmail.com"}>`;
+
+  const safeName = escapeHtml(name || "Valued Customer");
+  const safeCity = escapeHtml(city || "Not Specified");
+  const safeProduct = escapeHtml(product || "UPVC & Aluminium Windows & Doors");
+  const safeMessage = message ? escapeHtml(message.slice(0, 300)) : "";
+
+  const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inquiry Received - Siri Windows & Doors</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f8fafc;
+      color: #334155;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      max-width: 580px;
+      margin: 24px auto;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+    }
+    .header {
+      background: #0f172a;
+      padding: 28px 24px;
+      text-align: center;
+      border-bottom: 3px solid #f59e0b;
+    }
+    .logo-badge {
+      display: inline-block;
+      width: 44px;
+      height: 44px;
+      line-height: 44px;
+      background: #f59e0b;
+      color: #0f172a;
+      font-weight: 900;
+      font-size: 22px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    .brand-subtitle {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .content {
+      padding: 30px 24px;
+    }
+    .status-badge {
+      display: inline-block;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #047857;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      margin-bottom: 16px;
+    }
+    .greeting {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 10px;
+    }
+    .text {
+      font-size: 14px;
+      color: #475569;
+      line-height: 1.6;
+      margin: 0 0 20px 0;
+    }
+    .summary-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 24px;
+    }
+    .summary-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .contact-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: #92400e;
+      line-height: 1.5;
+    }
+    .footer {
+      background: #f1f5f9;
+      padding: 20px 24px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.6;
+    }
+    @media only screen and (max-width: 600px) {
+      .wrapper {
+        margin: 0 !important;
+        border-radius: 0 !important;
+        border: none !important;
+      }
+      .content {
+        padding: 24px 16px !important;
+      }
+      .header {
+        padding: 24px 16px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="logo-badge">S</div>
+      <h1 class="brand-title">Siri Windows &amp; Doors</h1>
+      <div class="brand-subtitle">Tanuku Fabrication &amp; Installation Works</div>
+    </div>
+    <div class="content">
+      <div class="status-badge">&#10003; Request Received Successfully</div>
+      <div class="greeting">Hello ${safeName},</div>
+      <p class="text">
+        Thank you for contacting <strong>Siri Windows &amp; Doors</strong>! Your inquiry has been received by our workshop. Our team will review your specifications and contact you shortly to assist with measurement, custom fabrication options, and accurate pricing.
+      </p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" class="summary-card" style="width: 100%; border-collapse: collapse; margin-bottom: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+        <tr>
+          <td colspan="2" class="summary-title" style="padding: 12px 14px 8px 14px; font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">
+            Inquiry Summary
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 14px; color: #64748b; font-size: 13px;">Product Interest:</td>
+          <td style="padding: 8px 14px; color: #0f172a; font-size: 13px; font-weight: 600; text-align: right;">${safeProduct}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 14px; color: #64748b; font-size: 13px;">Location / City:</td>
+          <td style="padding: 8px 14px; color: #0f172a; font-size: 13px; font-weight: 600; text-align: right;">${safeCity}</td>
+        </tr>
+        ${safeMessage
+      ? `<tr>
+          <td style="padding: 8px 14px 12px 14px; color: #64748b; font-size: 13px; vertical-align: top;">Your Message:</td>
+          <td style="padding: 8px 14px 12px 14px; color: #0f172a; font-size: 13px; font-weight: 500; text-align: right; max-width: 250px;">&quot;${safeMessage}&quot;</td>
+        </tr>`
+      : ""
+    }
+      </table>
+
+      <div class="contact-box">
+        <strong>Need urgent assistance?</strong><br>
+        Feel free to call our Tanuku workshop directly at <strong>+91 9985168003</strong> or <strong>+91 7780127475</strong> during business hours.
+      </div>
+
+      <p class="text" style="margin-bottom: 0; font-size: 13px; color: #64748b;">
+        Warm regards,<br>
+        <strong style="color: #0f172a;">Customer Relations &amp; Fabrication Team</strong><br>
+        Siri Windows &amp; Doors
+      </p>
+    </div>
+    <div class="footer">
+      Siri Windows &amp; Doors &bull; NH-16 Service Road, Tanuku, West Godavari District, Andhra Pradesh<br>
+      This is an automated confirmation sent to ${to}.
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const textContent = `Hello ${safeName},
+
+Thank you for contacting Siri Windows & Doors!
+
+Your request has been submitted successfully. Our team will review your requirements and contact you shortly to assist with measurement, custom fabrication options, and accurate pricing.
+
+Inquiry Summary:
+- Product Interest: ${product || "UPVC & Aluminium Windows & Doors"}
+- Location: ${city || "Not Specified"}
+${message ? `- Message: "${message}"\n` : ""}
+Need immediate assistance?
+Call our Tanuku workshop directly at +91 98491 23456 / +91 98480 12345.
+
+Warm regards,
+Customer Relations & Fabrication Team
+Siri Windows & Doors
+Tanuku, West Godavari, Andhra Pradesh`;
+
+  const info = await transporter.sendMail({
+    from: fromAddress,
+    to,
+    subject: "Your Request is Received – Siri Windows & Doors",
+    text: textContent,
+    html: htmlContent,
+  });
+
+  return { success: true, messageId: info.messageId };
+}

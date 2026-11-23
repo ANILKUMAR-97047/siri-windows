@@ -452,14 +452,14 @@ export default function StaffAttendancePage() {
               Staff Attendance & Time Tracking
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Live synchronized attendance register powered by Supabase backend API.
+              Live synchronized attendance register and daily work tracking.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={fetchData}
-              title="Refresh attendance from backend"
+              title="Refresh Attendance"
               className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-emerald-500" : ""}`} />
@@ -940,10 +940,10 @@ export default function StaffAttendancePage() {
             <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  Monthly Attendance Summary (Backend Aggregation)
+                  Monthly Attendance Summary
                 </span>
                 <p className="text-[11px] text-slate-400">
-                  Aggregated working days, leaves, and overtime for selected month from PostgreSQL backend
+                  Aggregated working days, leaves, and overtime for selected month
                 </p>
               </div>
 

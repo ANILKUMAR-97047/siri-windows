@@ -230,7 +230,7 @@ export default function PricingPage() {
         <div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Tag className="w-5 h-5 text-amber-500" />
-            Pricing Packages & Rates per Sq.Ft (Live Supabase DB)
+            Pricing Packages & Rates per Sq.Ft
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Define standard price matrices for customer quotes, estimations, and website pricing cards.
@@ -259,7 +259,7 @@ export default function PricingPage() {
       {loading && packages.length === 0 ? (
         <div className="py-16 text-center text-slate-400">
           <Loader2 className="w-7 h-7 animate-spin mx-auto mb-2 text-amber-500" />
-          Loading pricing packages from database...
+          Loading pricing packages...
         </div>
       ) : packages.length === 0 ? (
         <div className="py-16 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-8 space-y-3">
@@ -549,7 +549,7 @@ export default function PricingPage() {
                   className="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold transition shadow-sm cursor-pointer flex items-center gap-1.5"
                 >
                   {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  {editingPkg ? "Save Changes to Supabase" : "Save Package to Supabase"}
+                  {editingPkg ? "Save Changes" : "Save Package"}
                 </button>
               </div>
             </form>

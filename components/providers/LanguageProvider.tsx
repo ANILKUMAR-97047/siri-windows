@@ -184,8 +184,16 @@ export default function LanguageProvider({
             ...base.contactInfo,
             phones:
               [contact.phonePrimary, contact.phoneSecondary].filter(Boolean).length > 0
-                ? [contact.phonePrimary, contact.phoneSecondary].filter(Boolean)
-                : base.contactInfo.phones,
+                ? [contact.phonePrimary, contact.phoneSecondary]
+                    .filter(Boolean)
+                    .map((p) => {
+                      const clean = String(p).trim().replace(/^(\+91\s*)+/, "+91 ");
+                      return clean.startsWith("+") ? clean : `+91 ${clean}`;
+                    })
+                : base.contactInfo.phones.map((p) => {
+                    const clean = String(p).trim().replace(/^(\+91\s*)+/, "+91 ");
+                    return clean.startsWith("+") ? clean : `+91 ${clean}`;
+                  }),
             whatsappNumber: contact.whatsappNumber || base.contactInfo.whatsappNumber,
             address: isEn
               ? (contact.address || base.contactInfo.address)

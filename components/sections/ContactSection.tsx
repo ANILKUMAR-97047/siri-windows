@@ -357,15 +357,19 @@ export default function ContactSection() {
                     <p className="font-medium text-navy-950 text-sm mb-0.5">
                       {contactLabels.call}
                     </p>
-                    {contactInfo.phones.map((phone) => (
-                      <a
-                        key={phone}
-                        href={`tel:${phone}`}
-                        className="block text-slate-600 text-sm hover:text-navy-600 transition-colors"
-                      >
-                        +91 {phone}
-                      </a>
-                    ))}
+                    {contactInfo.phones.map((phone) => {
+                      const cleanPhone = phone.trim().replace(/^(\+91\s*)+/, "+91 ");
+                      const displayPhone = cleanPhone.startsWith("+") ? cleanPhone : `+91 ${cleanPhone}`;
+                      return (
+                        <a
+                          key={phone}
+                          href={`tel:${displayPhone.replace(/[\s\-]/g, "")}`}
+                          className="block text-slate-600 text-sm hover:text-navy-600 transition-colors"
+                        >
+                          {displayPhone}
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
 

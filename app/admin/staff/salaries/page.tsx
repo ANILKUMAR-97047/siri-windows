@@ -1178,7 +1178,7 @@ export default function SalariesPage() {
                   <tr>
                     <td colSpan={8} className="py-14 text-center text-slate-400">
                       <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-500" />
-                      Loading dynamic salary records from Supabase...
+                      Loading salary records...
                     </td>
                   </tr>
                 ) : filteredRecords.length === 0 ? (

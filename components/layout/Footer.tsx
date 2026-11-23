@@ -77,17 +77,21 @@ export default function Footer() {
                   {contactInfo.address}
                 </span>
               </li>
-              {contactInfo.phones.map((phone) => (
-                <li key={phone} className="flex items-center gap-3">
-                  <Phone className="w-4 h-4 text-gold-500 shrink-0" />
-                  <a
-                    href={`tel:${phone}`}
-                    className="text-sm text-white/60 hover:text-white transition-colors"
-                  >
-                    +91 {phone}
-                  </a>
-                </li>
-              ))}
+              {contactInfo.phones.map((phone) => {
+                const cleanPhone = phone.trim().replace(/^(\+91\s*)+/, "+91 ");
+                const displayPhone = cleanPhone.startsWith("+") ? cleanPhone : `+91 ${cleanPhone}`;
+                return (
+                  <li key={phone} className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-gold-500 shrink-0" />
+                    <a
+                      href={`tel:${displayPhone.replace(/[\s\-]/g, "")}`}
+                      className="text-sm text-white/60 hover:text-white transition-colors"
+                    >
+                      {displayPhone}
+                    </a>
+                  </li>
+                );
+              })}
               <li className="flex items-start gap-3">
                 <Clock className="w-4 h-4 mt-0.5 text-gold-500 shrink-0" />
                 <span className="text-sm text-white/60">

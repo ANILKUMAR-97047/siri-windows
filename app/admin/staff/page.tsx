@@ -290,7 +290,7 @@ export default function StaffPage() {
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Users className="w-5 h-5 text-amber-500" />
-              Staff & Workforce Directory (Live Supabase DB)
+              Staff & Workforce Directory
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Fabricators, installers, site engineers, and field technicians in Tanuku HQ.
@@ -301,7 +301,7 @@ export default function StaffPage() {
               onClick={fetchStaff}
               disabled={loading}
               className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition cursor-pointer"
-              title="Refresh Staff from Database"
+              title="Refresh Staff Directory"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             </button>
@@ -495,12 +495,12 @@ export default function StaffPage() {
                 {editingStaff ? (
                   <>
                     <Pencil className="w-4 h-4 text-amber-500" />
-                    Edit Staff Member (Updates in Supabase)
+                    Edit Staff Member
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4 text-amber-500" />
-                    Add Staff Member (Saves to Supabase)
+                    Add Staff Member
                   </>
                 )}
               </h3>
@@ -627,7 +627,7 @@ export default function StaffPage() {
               <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
                 <div className="flex items-center justify-between">
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
-                    Profile Photo (Saved to Database)
+                    Profile Photo
                   </label>
                   {formData.photo_url && (
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
@@ -739,7 +739,7 @@ export default function StaffPage() {
                   disabled={isUploading}
                   className="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition shadow-sm disabled:opacity-50"
                 >
-                  {editingStaff ? "Save Changes" : "Save to Database"}
+                  {editingStaff ? "Save Changes" : "Save Staff Member"}
                 </button>
               </div>
             </form>

@@ -21,10 +21,11 @@ export default async function AdminDashboardPage() {
 
   // 1. Fetch live metrics from Supabase
   const [
-    { count: leadsCount, data: recentLeadsData },
-    { count: projectsCount, data: activeProjectsData },
-    { count: materialsCount, data: lowStockData },
-    { count: staffCount },
+    leadsResult,
+    projectsResult,
+    ongoingProjectsResult,
+    materialsResult,
+    staffResult,
   ] = await Promise.all([
     supabase
       .from("leads")
@@ -33,20 +34,38 @@ export default async function AdminDashboardPage() {
       .limit(4),
     supabase
       .from("projects")
-      .select("*, clients(name)")
+      .select("*, clients(name, city)", { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(3),
+      .limit(4),
     supabase
-      .from("materials")
-      .select("*", { count: "exact" })
-      .filter("current_stock", "lte", "reorder_level"),
+      .from("projects")
+      .select("*", { count: "exact", head: true })
+      .neq("status", "completed"),
+    supabase.from("materials").select("id, name, current_stock, reorder_level"),
     supabase.from("staff").select("*", { count: "exact", head: true }),
   ]);
+
+  const leadsCount = leadsResult.count ?? 0;
+  const recentLeadsData = leadsResult.data ?? [];
+
+  const totalProjectsCount = projectsResult.count ?? 0;
+  const ongoingProjectsCount = ongoingProjectsResult.count ?? totalProjectsCount;
+  const activeProjectsData = projectsResult.data ?? [];
+
+  const allMaterials = materialsResult.data ?? [];
+  const lowStockMaterials = allMaterials.filter(
+    (m: any) =>
+      Number(m.reorder_level) > 0 &&
+      Number(m.current_stock || 0) <= Number(m.reorder_level || 0)
+  );
+  const lowStockCount = lowStockMaterials.length;
+
+  const staffCount = staffResult.count ?? 0;
 
   const stats = [
     {
       title: "New & Active Leads",
-      value: String(leadsCount ?? 0),
+      value: String(leadsCount),
       subtext: "Live customer inquiries in CRM",
       icon: PhoneCall,
       href: "/admin/leads",
@@ -55,8 +74,8 @@ export default async function AdminDashboardPage() {
     },
     {
       title: "Ongoing Projects",
-      value: String(projectsCount ?? 0),
-      subtext: "Active in fabrication/site work",
+      value: String(ongoingProjectsCount),
+      subtext: `${totalProjectsCount} total projects in pipeline`,
       icon: Briefcase,
       href: "/admin/projects",
       color: "text-amber-500",
@@ -64,17 +83,17 @@ export default async function AdminDashboardPage() {
     },
     {
       title: "Warehouse Materials",
-      value: `${materialsCount ?? 0} Low Stock`,
-      subtext: "Items needing replenishment",
+      value: `${lowStockCount} Low Stock`,
+      subtext: lowStockCount > 0 ? "Items needing replenishment" : "All materials in stock",
       icon: Package,
       href: "/admin/stock",
-      color: "text-emerald-500",
-      bgColor: "bg-emerald-500/10",
-      alert: (lowStockData?.length ?? 0) > 0,
+      color: lowStockCount > 0 ? "text-amber-500" : "text-emerald-500",
+      bgColor: lowStockCount > 0 ? "bg-amber-500/10" : "bg-emerald-500/10",
+      alert: lowStockCount > 0,
     },
     {
       title: "Team & Technicians",
-      value: `${staffCount ?? 0} Active`,
+      value: `${staffCount} Active`,
       subtext: "Fabricators, glaziers, installers",
       icon: Users,
       href: "/admin/staff",
@@ -93,7 +112,7 @@ export default async function AdminDashboardPage() {
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Connected to Supabase PostgreSQL (ap-south-1)
+                Operations Center Active
               </div>
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
                 Operational Command Center
@@ -161,13 +180,13 @@ export default async function AdminDashboardPage() {
 
         {/* Main Content Split: Recent Leads & Ongoing Projects */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column (2 spans): Recent Leads from Supabase */}
+          {/* Left Column (2 spans): Recent Leads */}
           <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div>
                 <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                   <PhoneCall className="w-4 h-4 text-amber-500" />
-                  Live Customer Inquiries & Leads (from Supabase DB)
+                  Live Customer Inquiries & Leads
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Direct inquiries from the website contact form and client visits
@@ -230,14 +249,14 @@ export default async function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Right Column (1 span): Active Projects & Low Stock */}
+          {/* Right Column (1 span): Active Projects */}
           <div className="space-y-6">
             {/* Projects Summary */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                   <Briefcase className="w-4 h-4 text-amber-500" />
-                  Live Projects (Supabase)
+                  Live Manufacturing Projects
                 </h3>
                 <Link
                   href="/admin/projects"
@@ -247,47 +266,29 @@ export default async function AdminDashboardPage() {
                 </Link>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {(activeProjectsData ?? []).map((p: any) => (
-                  <div key={p.id} className="space-y-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                  <div
+                    key={p.id}
+                    className="space-y-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-amber-500/30 transition"
+                  >
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 truncate pr-2">
                         {p.title}
                       </span>
-                      <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 capitalize">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 capitalize shrink-0">
                         {p.status}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-[10px] text-slate-400">
-                      <span>{p.site_location}</span>
-                      <span>₹{Number(p.contract_amount || 0).toLocaleString("en-IN")}</span>
+                    <div className="flex items-center justify-between text-[11px] text-slate-400">
+                      <span className="truncate">{p.site_location || p.clients?.city || "Tanuku"}</span>
+                      <span className="font-medium text-slate-600 dark:text-slate-300">
+                        ₹{Number(p.contract_amount || 0).toLocaleString("en-IN")}
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Low Stock Reorder Notice */}
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                Low Stock Alert ({lowStockData?.length ?? 0} items)
-              </div>
-              <p className="text-[11px] text-amber-900/80 dark:text-amber-200/80 leading-relaxed">
-                {(lowStockData?.length ?? 0) > 0 ? (
-                  <>
-                    {lowStockData?.map((m: any) => m.name).join(", ")} are nearing minimum reserve in Tanuku workshop.
-                  </>
-                ) : (
-                  "All warehouse materials are currently above reorder threshold."
-                )}
-              </p>
-              <Link
-                href="/admin/stock"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 hover:underline"
-              >
-                View Inventory <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
             </div>
           </div>
         </div>

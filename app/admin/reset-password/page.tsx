@@ -142,7 +142,7 @@ function ResetPasswordForm() {
         {verifying ? (
           <div className="py-12 text-center text-slate-400 space-y-3">
             <Loader2 className="w-7 h-7 animate-spin mx-auto text-amber-500" />
-            <p className="text-xs">Validating security token with database...</p>
+            <p className="text-xs">Validating security token...</p>
           </div>
         ) : !tokenValid ? (
           /* Invalid / Expired Token View */
@@ -187,7 +187,7 @@ function ResetPasswordForm() {
             <div className="space-y-1.5">
               <h3 className="text-base font-bold text-white">Password Updated!</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Your administrator password has been securely updated in the database. You can now log in with your new credentials.
+                Your administrator password has been securely updated. You can now log in with your new credentials.
               </p>
             </div>
 
@@ -285,7 +285,7 @@ function ResetPasswordForm() {
               {submitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Updating Password in Database...</span>
+                  <span>Updating Password...</span>
                 </>
               ) : (
                 <>

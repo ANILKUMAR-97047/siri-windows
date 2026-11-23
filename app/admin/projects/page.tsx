@@ -389,7 +389,7 @@ export default function ProjectsPage() {
     const confirmed = await confirmModal({
       title: "Delete Payment Record?",
       message:
-        "Are you sure you want to delete this payment record?\n\nThe project's received balance and remaining due will be automatically adjusted and synchronized in Supabase.",
+        "Are you sure you want to delete this payment record?\n\nThe project's received balance and remaining due will be automatically adjusted and synchronized.",
       type: "danger",
       confirmText: "Delete Payment",
       cancelText: "Keep Record",
@@ -1214,7 +1214,7 @@ export default function ProjectsPage() {
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
                     &quot;{deleteTarget.title}&quot;
                   </span>
-                  ? This will remove the project and its payment history from the database.
+                  ? This will permanently remove the project and its payment history.
                 </p>
               </div>
 
