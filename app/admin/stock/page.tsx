@@ -22,7 +22,7 @@ import {
   Info,
 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
-import { toast } from "@/components/ui/ToastProvider";
+import { toast, confirmModal } from "@/components/ui/ToastProvider";
 import { CustomSelect } from "@/components/ui/Select";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -304,11 +304,17 @@ export default function StockPage() {
     }
   };
 
-  // Delete Material
+  // Delete Material with Beautiful Confirmation Modal
   const handleDeleteMaterial = async (mat: Material) => {
-    if (!confirm(`Are you sure you want to delete "${mat.name}"? This will also remove associated stock records.`)) {
-      return;
-    }
+    const confirmed = await confirmModal({
+      title: "Delete Material from Inventory?",
+      message: `Are you sure you want to delete "${mat.name}" (${mat.code || "No Code"})?\n\nThis will permanently remove this material and its associated stock audit records from the warehouse inventory.`,
+      type: "danger",
+      confirmText: "Delete Material",
+      cancelText: "Keep Material",
+    });
+
+    if (!confirmed) return;
 
     try {
       const res = await fetch(`/api/admin/stock?id=${mat.id}`, { method: "DELETE" });
@@ -366,11 +372,13 @@ export default function StockPage() {
     });
   }, [materials, searchQuery, selectedCategory, stockStatusFilter]);
 
-  // Extract distinct years from transactions for Year filter
+  // Extract distinct years from transactions for Year filter (including current & recent years)
   const transactionYears = useMemo(() => {
     const yearsSet = new Set<string>();
-    const currentYear = new Date().getFullYear().toString();
-    yearsSet.add(currentYear);
+    const currentYear = new Date().getFullYear();
+    for (let yr = currentYear; yr >= currentYear - 3; yr--) {
+      yearsSet.add(yr.toString());
+    }
     transactions.forEach((tx) => {
       if (tx.created_at) {
         const y = new Date(tx.created_at).getFullYear().toString();
@@ -380,22 +388,46 @@ export default function StockPage() {
     return Array.from(yearsSet).sort((a, b) => Number(b) - Number(a));
   }, [transactions]);
 
-  // Filtered transactions for Tab 2 (Audit Trail with Search, Type, Date, Month, Year)
+  // Filtered transactions for Tab 2 (Audit Trail with Search, Type, Date, Month, Year Combination)
   const filteredTransactions = useMemo(() => {
     return transactions.filter((tx) => {
       const txDate = new Date(tx.created_at);
+      const isDateValid = !isNaN(txDate.getTime());
       const { destination, notes } = parseDestinationAndNotes(tx.notes, tx.reference_id);
 
-      // Search Query filter
+      // Search Query filter (matches Material Name, SKU/Code, Purpose, Destination, Notes, and Date/Month/Year text)
       if (txSearchQuery.trim()) {
-        const query = txSearchQuery.toLowerCase();
+        const query = txSearchQuery.toLowerCase().trim();
         const matchesName = (tx.materials?.name || "").toLowerCase().includes(query);
         const matchesCode = (tx.materials?.code || "").toLowerCase().includes(query);
         const matchesPurpose = (tx.reference_type || "").toLowerCase().includes(query);
         const matchesDest = destination.toLowerCase().includes(query);
         const matchesNotes = notes.toLowerCase().includes(query);
 
-        if (!matchesName && !matchesCode && !matchesPurpose && !matchesDest && !matchesNotes) {
+        // Date & Month & Year matching (e.g. "Nov 2026", "November 2026", "Nov", "November", "2026", "23 Nov")
+        let matchesDate = false;
+        if (isDateValid) {
+          const formattedDate = formatTxDate(tx.created_at).toLowerCase();
+          const yearStr = txDate.getFullYear().toString();
+          const monthFull = txDate.toLocaleString("en-IN", { month: "long" }).toLowerCase();
+          const monthShort = txDate.toLocaleString("en-IN", { month: "short" }).toLowerCase();
+          const monthYearFull = `${monthFull} ${yearStr}`;
+          const monthYearShort = `${monthShort} ${yearStr}`;
+          const yearMonthFull = `${yearStr} ${monthFull}`;
+          const yearMonthShort = `${yearStr} ${monthShort}`;
+
+          matchesDate =
+            formattedDate.includes(query) ||
+            monthYearFull.includes(query) ||
+            monthYearShort.includes(query) ||
+            yearMonthFull.includes(query) ||
+            yearMonthShort.includes(query) ||
+            monthFull.includes(query) ||
+            monthShort.includes(query) ||
+            yearStr.includes(query);
+        }
+
+        if (!matchesName && !matchesCode && !matchesPurpose && !matchesDest && !matchesNotes && !matchesDate) {
           return false;
         }
       }
@@ -405,24 +437,26 @@ export default function StockPage() {
         return false;
       }
 
-      // Year filter
+      // Year filter (Combines with Month)
       if (txYearFilter !== "ALL") {
-        if (txDate.getFullYear().toString() !== txYearFilter) {
+        if (!isDateValid || txDate.getFullYear().toString() !== txYearFilter) {
           return false;
         }
       }
 
-      // Month filter (0-11)
+      // Month filter (0-11, Combines with Year)
       if (txMonthFilter !== "ALL") {
-        if (txDate.getMonth().toString() !== txMonthFilter) {
+        if (!isDateValid || txDate.getMonth().toString() !== txMonthFilter) {
           return false;
         }
       }
 
-      // Exact Date filter (YYYY-MM-DD)
+      // Exact Date filter (YYYY-MM-DD local or UTC)
       if (txDateFilter) {
-        const txDateString = tx.created_at.slice(0, 10);
-        if (txDateString !== txDateFilter) {
+        if (!isDateValid) return false;
+        const localDateString = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, "0")}-${String(txDate.getDate()).padStart(2, "0")}`;
+        const utcDateString = tx.created_at.slice(0, 10);
+        if (localDateString !== txDateFilter && utcDateString !== txDateFilter) {
           return false;
         }
       }
@@ -838,7 +872,7 @@ export default function StockPage() {
                     type="text"
                     value={txSearchQuery}
                     onChange={(e) => setTxSearchQuery(e.target.value)}
-                    placeholder="Search material, SKU, purpose, destination..."
+                    placeholder="Search material, SKU, purpose, destination, month, year..."
                     className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
                   />
                   {txSearchQuery && (
@@ -866,25 +900,31 @@ export default function StockPage() {
                   />
                 </div>
 
-                {/* 3. Year Filter */}
+                {/* 3. Year Filter (Combines with Month) */}
                 <div>
                   <CustomSelect
                     value={txYearFilter}
-                    onChange={(val) => setTxYearFilter(val)}
+                    onChange={(val) => {
+                      setTxYearFilter(val);
+                      if (txDateFilter) setTxDateFilter("");
+                    }}
                     size="sm"
                     dark={true}
                     options={[
                       { value: "ALL", label: "All Years" },
-                      ...transactionYears.map((y) => ({ value: y, label: `Year ${y}` })),
+                      ...transactionYears.map((y) => ({ value: y, label: y })),
                     ]}
                   />
                 </div>
 
-                {/* 4. Month Filter */}
+                {/* 4. Month Filter (Combines with Year) */}
                 <div>
                   <CustomSelect
                     value={txMonthFilter}
-                    onChange={(val) => setTxMonthFilter(val)}
+                    onChange={(val) => {
+                      setTxMonthFilter(val);
+                      if (txDateFilter) setTxDateFilter("");
+                    }}
                     size="sm"
                     dark={true}
                     options={[

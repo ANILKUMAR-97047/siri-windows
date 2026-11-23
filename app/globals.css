@@ -113,6 +113,25 @@ textarea:disabled,
   cursor: not-allowed !important;
 }
 
+/* ============================================================
+   Remove Up/Down Spinner Arrows from Number Inputs
+   Hides default browser increase/decrease stepper arrows globally
+   across Chrome, Edge, Safari, Opera, and Firefox without
+   disturbing numeric input behavior, forms, or APIs.
+   ============================================================ */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;

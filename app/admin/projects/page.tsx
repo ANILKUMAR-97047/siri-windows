@@ -18,12 +18,28 @@ import {
   User,
   CreditCard,
   Pencil,
+  Receipt,
+  History,
+  Banknote,
+  QrCode,
+  ArrowDownRight,
+  Info,
+  Plus,
+  Eye,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { CustomSelect } from "@/components/ui/Select";
+import { confirmModal } from "@/components/ui/ToastProvider";
 import { useQueryClient } from "@tanstack/react-query";
-import { useProjectsQuery, useClientsQuery, useStaffListQuery, queryKeys } from "@/lib/queries";
+import {
+  useProjectsQuery,
+  useClientsQuery,
+  useStaffListQuery,
+  useProjectPaymentsQuery,
+  queryKeys,
+  type ProjectPayment,
+} from "@/lib/queries";
 
 interface ClientRef {
   id: string;
@@ -68,6 +84,13 @@ interface ProjectRecord {
 
 export default function ProjectsPage() {
   const queryClient = useQueryClient();
+
+  // Prevent SSR date hydration mismatch
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const { data: cachedProjects = [], isLoading: queryLoading, refetch: refetchProjects } = useProjectsQuery();
   const { data: cachedClients = [] } = useClientsQuery();
   const { data: cachedStaff = [] } = useStaffListQuery();
@@ -80,36 +103,26 @@ export default function ProjectsPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Instant zero-latency loading from cache
-  useEffect(() => {
-    if (cachedProjects && cachedProjects.length > 0) {
-      const formatted = (cachedProjects as unknown as ProjectRecord[]).map((p) => {
-        const { progress, stage } = getStageAndProgress(p.status, p.progress);
-        return { ...p, progress, stage };
-      });
-      setProjects(formatted);
-      setLoading(false);
-    } else if (!queryLoading) {
-      setLoading(false);
-    }
-  }, [cachedProjects, queryLoading]);
+  // Payment History Drawer / Modal State
+  const [historyProject, setHistoryProject] = useState<ProjectRecord | null>(null);
+  const {
+    data: projectPayments = [],
+    isLoading: paymentsLoading,
+    refetch: refetchPayments,
+  } = useProjectPaymentsQuery(historyProject?.id);
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (cachedClients && cachedClients.length > 0) {
-      setClientsList(cachedClients as unknown as ClientRef[]);
-    }
-  }, [cachedClients]);
-
-  useEffect(() => {
-    if (cachedStaff && cachedStaff.length > 0) {
-      setStaffList(cachedStaff as unknown as StaffRef[]);
-    }
-  }, [cachedStaff]);
-
-  // Modals state
-  // Payment Recording Modal State
+  // Upgraded Payment Recording Modal State
   const [paymentProject, setPaymentProject] = useState<ProjectRecord | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState<string>("");
+  const [paymentForm, setPaymentForm] = useState({
+    amount: "",
+    paymentDate: new Date().toISOString().split("T")[0],
+    paymentMode: "UPI / PhonePe",
+    stage: "Advance (Booking / Material Procurement)",
+    referenceId: "",
+    receivedBy: "",
+    notes: "",
+  });
   const [savingPayment, setSavingPayment] = useState(false);
 
   // Delete Target Modal State
@@ -155,13 +168,38 @@ export default function ProjectsPage() {
     }
   };
 
+  // Instant zero-latency loading from cache
+  useEffect(() => {
+    if (cachedProjects && cachedProjects.length > 0) {
+      const formatted = (cachedProjects as unknown as ProjectRecord[]).map((p) => {
+        const { progress, stage } = getStageAndProgress(p.status, p.progress);
+        return { ...p, progress, stage };
+      });
+      setProjects(formatted);
+      setLoading(false);
+    } else if (!queryLoading) {
+      setLoading(false);
+    }
+  }, [cachedProjects, queryLoading]);
+
+  useEffect(() => {
+    if (cachedClients && cachedClients.length > 0) {
+      setClientsList(cachedClients as unknown as ClientRef[]);
+    }
+  }, [cachedClients]);
+
+  useEffect(() => {
+    if (cachedStaff && cachedStaff.length > 0) {
+      setStaffList(cachedStaff as unknown as StaffRef[]);
+    }
+  }, [cachedStaff]);
+
   // Fetch all projects, clients, and staff from Supabase
   const fetchData = async (isManualRefresh = false) => {
     if (isManualRefresh) setRefreshing(true);
     else setLoading(true);
 
     try {
-      // 1. Fetch Projects joined with Clients and Supervisor Staff
       const { data: projData, error: projError } = await supabase
         .from("projects")
         .select(`
@@ -187,32 +225,11 @@ export default function ProjectsPage() {
         console.error("Error fetching projects:", projError);
         showToast("error", "Failed to fetch projects: " + projError.message);
       } else if (projData) {
-        // Map with calculated progress and stages
         const formatted = (projData as unknown as ProjectRecord[]).map((p) => {
           const { progress, stage } = getStageAndProgress(p.status, p.progress);
           return { ...p, progress, stage };
         });
         setProjects(formatted);
-      }
-
-      // 2. Fetch Clients for dropdown
-      const { data: clientsData } = await supabase
-        .from("clients")
-        .select("id, name, company_name, phone, city, address")
-        .order("name", { ascending: true });
-
-      if (clientsData) {
-        setClientsList(clientsData as unknown as ClientRef[]);
-      }
-
-      // 3. Fetch Staff for supervisors dropdown
-      const { data: staffData } = await supabase
-        .from("staff")
-        .select("id, name, phone, role")
-        .order("name", { ascending: true });
-
-      if (staffData) {
-        setStaffList(staffData as unknown as StaffRef[]);
       }
     } catch (err: any) {
       console.error("Unexpected error fetching projects data:", err);
@@ -231,7 +248,6 @@ export default function ProjectsPage() {
   const updateProjectStatus = async (id: string, newStatus: ProjectRecord["status"]) => {
     const { progress, stage } = getStageAndProgress(newStatus);
 
-    // Optimistic UI update
     setProjects((prev) =>
       prev.map((p) => (p.id === id ? { ...p, status: newStatus, progress, stage } : p))
     );
@@ -292,48 +308,121 @@ export default function ProjectsPage() {
     }
   };
 
-  // Record additional payment received
+  // Record additional payment received (Saves to relational project_payments & auto-syncs balance)
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!paymentProject) return;
 
-    const addedAmount = Number(paymentAmount.replace(/[^0-9]/g, "")) || 0;
-    if (addedAmount <= 0) {
-      showToast("error", "Please enter a valid payment amount.");
+    const amt = Number(paymentForm.amount.replace(/[^0-9]/g, ""));
+    if (!amt || amt <= 0) {
+      showToast("error", "Please enter a valid payment amount greater than 0.");
       return;
     }
 
     setSavingPayment(true);
     try {
-      const newTotalReceived = Number(paymentProject.amount_received || 0) + addedAmount;
-      const { error } = await (supabase.from("projects") as any)
-        .update({
-          amount_received: newTotalReceived,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", paymentProject.id);
+      const res = await fetch("/api/admin/projects/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_id: paymentProject.id,
+          amount: amt,
+          payment_date: paymentForm.paymentDate || new Date().toISOString().split("T")[0],
+          payment_mode: paymentForm.paymentMode,
+          stage: paymentForm.stage,
+          reference_id: paymentForm.referenceId.trim() || null,
+          received_by: paymentForm.receivedBy.trim() || null,
+          notes: paymentForm.notes.trim() || null,
+        }),
+      });
 
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to record payment");
+      }
 
+      const newTotal = data.new_amount_received ?? Number(paymentProject.amount_received || 0) + amt;
+
+      // Optimistic UI updates
       setProjects((prev) =>
-        prev.map((p) =>
-          p.id === paymentProject.id ? { ...p, amount_received: newTotalReceived } : p
-        )
+        prev.map((p) => (p.id === paymentProject.id ? { ...p, amount_received: newTotal } : p))
       );
+
+      if (historyProject && historyProject.id === paymentProject.id) {
+        setHistoryProject((prev) => (prev ? { ...prev, amount_received: newTotal } : null));
+        await refetchPayments();
+      }
 
       showToast(
         "success",
-        `Payment of ₹${addedAmount.toLocaleString("en-IN")} recorded for ${paymentProject.title}!`
+        `Payment of ₹${amt.toLocaleString("en-IN")} recorded via ${paymentForm.paymentMode}!`
       );
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.projectPayments.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.clients.all }),
+      ]);
+
       setPaymentProject(null);
-      setPaymentAmount("");
+      setPaymentForm({
+        amount: "",
+        paymentDate: new Date().toISOString().split("T")[0],
+        paymentMode: "UPI / PhonePe",
+        stage: "Advance (Booking / Material Procurement)",
+        referenceId: "",
+        receivedBy: "",
+        notes: "",
+      });
     } catch (err: any) {
       console.error("Error recording payment:", err);
-      showToast("error", err.message || "Failed to update payment record.");
+      showToast("error", err.message || "Failed to save payment.");
     } finally {
       setSavingPayment(false);
+    }
+  };
+
+  // Delete payment record from ledger (and auto-deducts from project balance)
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!historyProject) return;
+
+    const confirmed = await confirmModal({
+      title: "Delete Payment Record?",
+      message:
+        "Are you sure you want to delete this payment record?\n\nThe project's received balance and remaining due will be automatically adjusted and synchronized in Supabase.",
+      type: "danger",
+      confirmText: "Delete Payment",
+      cancelText: "Keep Record",
+    });
+    if (!confirmed) return;
+
+    setDeletingPaymentId(paymentId);
+    try {
+      const res = await fetch(`/api/admin/projects/payments?id=${paymentId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete payment");
+      }
+
+      const newTotal = data.new_amount_received ?? 0;
+      setProjects((prev) =>
+        prev.map((p) => (p.id === historyProject.id ? { ...p, amount_received: newTotal } : p))
+      );
+      setHistoryProject((prev) => (prev ? { ...prev, amount_received: newTotal } : null));
+
+      await Promise.all([
+        refetchPayments(),
+        queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.projectPayments.all }),
+      ]);
+
+      showToast("success", "Payment record removed and project balance synchronized.");
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to delete payment");
+    } finally {
+      setDeletingPaymentId(null);
     }
   };
 
@@ -359,20 +448,24 @@ export default function ProjectsPage() {
     }
   };
 
-  // Filtered Projects List
+  // Filtered Projects
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
       const matchesFilter = filterStatus === "all" ? true : p.status === filterStatus;
       const clientName = (p.clients?.company_name || p.clients?.name || "").toLowerCase();
+      const supervisorName = (p.supervisor_name || p.staff?.name || "").toLowerCase();
+      const siteLoc = (p.site_location || p.clients?.city || "").toLowerCase();
       const matchesSearch =
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         clientName.includes(searchQuery.toLowerCase()) ||
-        (p.site_location || "").toLowerCase().includes(searchQuery.toLowerCase());
+        supervisorName.includes(searchQuery.toLowerCase()) ||
+        siteLoc.includes(searchQuery.toLowerCase());
+
       return matchesFilter && matchesSearch;
     });
   }, [projects, filterStatus, searchQuery]);
 
-  // Counts for tabs
+  // Counts by status
   const counts = useMemo(() => {
     return {
       all: projects.length,
@@ -383,27 +476,93 @@ export default function ProjectsPage() {
     };
   }, [projects]);
 
+  // Open Record Payment Modal with prefill
+  const openPaymentModal = (p: ProjectRecord) => {
+    setPaymentProject(p);
+    setPaymentForm({
+      amount: "",
+      paymentDate: new Date().toISOString().split("T")[0],
+      paymentMode: "UPI / PhonePe",
+      stage: p.amount_received === 0
+        ? "Advance (Booking / Material Procurement)"
+        : "Fabrication Stage (Mid-term)",
+      referenceId: "",
+      receivedBy: p.supervisor_name || "",
+      notes: "",
+    });
+  };
+
+  // Format date safely
+  const formatDateDisplay = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "Recently";
+    if (!isMounted) return dateStr.slice(0, 10);
+    try {
+      return new Date(dateStr).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Format currency
+  const formatCurrency = (val: number | string | undefined | null) => {
+    const num = Number(val) || 0;
+    return `₹${num.toLocaleString("en-IN")}`;
+  };
+
+  // Payment mode badge styling helper
+  const getPaymentModeBadge = (mode: string) => {
+    const m = (mode || "").toLowerCase();
+    if (m.includes("upi") || m.includes("phonepe") || m.includes("gpay")) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
+          <QrCode className="w-3 h-3" /> UPI / PhonePe
+        </span>
+      );
+    }
+    if (m.includes("cash")) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+          <Banknote className="w-3 h-3" /> CASH
+        </span>
+      );
+    }
+    if (m.includes("cheque")) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+          <Receipt className="w-3 h-3" /> CHEQUE
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+        <CreditCard className="w-3 h-3" /> BANK TRANSFER
+      </span>
+    );
+  };
+
   return (
     <PermissionGuard permission="projects">
       <div className="space-y-6">
-        {/* Floating Notification Toast */}
+        {/* Toast Notification */}
         {notification && (
           <div
-            className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-xs font-semibold backdrop-blur-md transition-all duration-300 animate-in slide-in-from-top-3 ${
-              notification.type === "success"
-                ? "bg-emerald-600 text-white shadow-emerald-950/20"
-                : "bg-red-600 text-white shadow-red-950/20"
+            className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-xs font-semibold text-white animate-in slide-in-from-top-3 ${
+              notification.type === "success" ? "bg-emerald-600" : "bg-red-600"
             }`}
           >
             {notification.type === "success" ? (
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <CheckCircle2 className="w-4 h-4" />
             ) : (
-              <AlertCircle className="w-4 h-4 shrink-0" />
+              <AlertCircle className="w-4 h-4" />
             )}
             <span>{notification.message}</span>
             <button
               onClick={() => setNotification(null)}
-              className="ml-2 hover:opacity-75 transition cursor-pointer"
+              className="ml-2 hover:opacity-75 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -414,24 +573,26 @@ export default function ProjectsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Briefcase className="w-5 h-5 text-amber-500" />
+              <span className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+                <Briefcase className="w-5 h-5" />
+              </span>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                 Projects & Manufacturing Operations
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 font-bold">
                 {projects.length} Total
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Live manufacturing tracking synchronized with Clients & Quotes and Quotation conversion.
+              Live manufacturing tracking synchronized with individual client payment history & stage milestones.
             </p>
           </div>
+
           <div className="flex items-center gap-2">
             <button
               onClick={() => fetchData(true)}
               disabled={refreshing || loading}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
-              title="Refresh Projects from Database"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs transition cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-amber-500" : ""}`} />
               Refresh
@@ -439,9 +600,9 @@ export default function ProjectsPage() {
           </div>
         </div>
 
-        {/* Filter Tabs & Search */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+        {/* Status Filter Tabs & Search Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
             {[
               { id: "all", label: `All Projects (${counts.all})` },
               { id: "planning", label: `Planning (${counts.planning})` },
@@ -452,10 +613,10 @@ export default function ProjectsPage() {
               <button
                 key={tab.id}
                 onClick={() => setFilterStatus(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
                   filterStatus === tab.id
-                    ? "bg-slate-900 text-white dark:bg-amber-500 dark:text-slate-950 shadow-sm font-bold"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                 }`}
               >
                 {tab.label}
@@ -467,36 +628,27 @@ export default function ProjectsPage() {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
+              placeholder="Search project, client, city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search project, builder, city..."
-              className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
             />
           </div>
         </div>
 
-        {/* Loading State */}
+        {/* Loading Spinner */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-            <Loader2 className="w-8 h-8 text-amber-500 animate-spin mb-3" />
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Loading dynamic projects & manufacturing pipeline from Supabase...
-            </p>
+          <div className="p-12 text-center text-slate-400">
+            <Loader2 className="w-6 h-6 animate-spin mx-auto text-amber-500 mb-2" />
+            <p className="text-xs">Loading manufacturing operations & payments...</p>
           </div>
         )}
 
         {/* Empty State */}
         {!loading && filteredProjects.length === 0 && (
-          <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 space-y-3">
-            <Briefcase className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-              No projects found
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              {searchQuery
-                ? `No projects match "${searchQuery}".`
-                : "No projects match the selected status tab. Projects converted from leads & quotes will appear here automatically."}
-            </p>
+          <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-center text-slate-400 space-y-2">
+            <Briefcase className="w-10 h-10 mx-auto opacity-30 text-slate-400" />
+            <p className="text-xs font-semibold">No active projects match your filters.</p>
           </div>
         )}
 
@@ -511,11 +663,12 @@ export default function ProjectsPage() {
                 p.clients?.company_name || p.clients?.name || "Client";
               const supervisorName =
                 p.supervisor_name || p.staff?.name || "Not Assigned";
+              const paymentPct = contractVal > 0 ? Math.round((receivedVal / contractVal) * 100) : 0;
 
               return (
                 <div
                   key={p.id}
-                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-amber-500/40 transition"
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 hover:border-amber-500/40 transition shadow-xs"
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
                     <div>
@@ -529,17 +682,17 @@ export default function ProjectsPage() {
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-3">
                         <span className="flex items-center gap-1">
-                          <Building className="w-3 h-3 text-slate-400" />
+                          <Building className="w-3.5 h-3.5 text-slate-400" />
                           Client: <strong className="text-slate-800 dark:text-slate-200">{clientDisplayName}</strong>
                         </span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-slate-400" />
+                          <MapPin className="w-3.5 h-3.5 text-slate-400" />
                           {p.site_location || p.clients?.city || "Tanuku"}
                         </span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
-                          <User className="w-3 h-3 text-slate-400" />
+                          <User className="w-3.5 h-3.5 text-slate-400" />
                           Supervisor: {supervisorName}
                         </span>
                       </div>
@@ -597,62 +750,71 @@ export default function ProjectsPage() {
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-                      <span>
-                        Start:{" "}
-                        {p.start_date
-                          ? new Date(p.start_date).toLocaleDateString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "Recently"}
-                      </span>
-                      <span>
-                        Target Handover:{" "}
-                        {p.expected_completion
-                          ? new Date(p.expected_completion).toLocaleDateString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "Within 30 Days"}
-                      </span>
+                      <span>Start: {formatDateDisplay(p.start_date)}</span>
+                      <span>Target Handover: {formatDateDisplay(p.expected_completion)}</span>
                     </div>
                   </div>
 
-                  {/* Financial Metrics */}
+                  {/* Financial Metrics with Dedicated Payment History & Record Actions */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
-                    <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    {/* Total Contract */}
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                       <div>
-                        <div className="text-[10px] text-slate-400">Total Contract</div>
-                        <div className="font-bold text-slate-900 dark:text-white text-sm">
-                          ₹{contractVal.toLocaleString("en-IN")}
+                        <div className="text-[10px] text-slate-400 font-medium">Total Contract</div>
+                        <div className="font-bold text-slate-900 dark:text-white text-base">
+                          {formatCurrency(contractVal)}
                         </div>
                       </div>
+                      <div className="w-7 h-7 rounded-lg bg-slate-200/60 dark:bg-slate-700/60 flex items-center justify-center text-slate-500">
+                        <IndianRupee className="w-3.5 h-3.5" />
+                      </div>
                     </div>
-                    <div className="p-3 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 flex items-center justify-between">
+
+                    {/* Received with History and Add Payment buttons */}
+                    <div className="p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 flex items-center justify-between">
                       <div>
-                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400">Received</div>
-                        <div className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">
-                          ₹{receivedVal.toLocaleString("en-IN")}
+                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                          Received ({paymentPct}%)
+                        </div>
+                        <div className="font-bold text-emerald-700 dark:text-emerald-300 text-base">
+                          {formatCurrency(receivedVal)}
                         </div>
                       </div>
-                      <button
-                        onClick={() => {
-                          setPaymentProject(p);
-                          setPaymentAmount("");
-                        }}
-                        className="text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2 py-1 rounded-md transition cursor-pointer"
-                        title="Record payment received"
-                      >
-                        + Payment
-                      </button>
-                    </div>
-                    <div className="p-3 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30">
-                      <div className="text-[10px] text-amber-600 dark:text-amber-400">Balance Pending</div>
-                      <div className="font-bold text-amber-700 dark:text-amber-300 text-sm">
-                        ₹{balanceVal.toLocaleString("en-IN")}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setHistoryProject(p)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] transition shadow-2xs cursor-pointer"
+                          title="View Payment History Ledger for this project"
+                        >
+                          <Receipt className="w-3.5 h-3.5" />
+                          History
+                        </button>
+                        <button
+                          onClick={() => openPaymentModal(p)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition shadow-2xs cursor-pointer"
+                          title="Record payment received"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Payment
+                        </button>
                       </div>
+                    </div>
+
+                    {/* Balance Pending */}
+                    <div className="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Balance Pending</div>
+                        <div className="font-bold text-amber-700 dark:text-amber-300 text-base">
+                          {formatCurrency(balanceVal)}
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        balanceVal === 0
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                          : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                      }`}>
+                        {balanceVal === 0 ? "PAID IN FULL" : "PAYMENT DUE"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -661,15 +823,207 @@ export default function ProjectsPage() {
           </div>
         )}
 
-        {/* Record Payment Modal */}
+        {/* ======================================================== */}
+        {/* PAYMENT HISTORY & MILESTONE LEDGER DRAWER / MODAL         */}
+        {/* ======================================================== */}
+        {historyProject && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-y-auto p-5 sm:p-6 my-auto shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
+                    <Receipt className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                      Client Payment History & Ledger
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {historyProject.title} • Client:{" "}
+                      <strong className="text-slate-800 dark:text-slate-200">
+                        {historyProject.clients?.company_name || historyProject.clients?.name || "Client"}
+                      </strong>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setHistoryProject(null)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Financial KPI Banner */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs">
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Total Contract</div>
+                  <div className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base mt-0.5">
+                    {formatCurrency(historyProject.contract_amount)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-semibold">Total Received</div>
+                  <div className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm sm:text-base mt-0.5">
+                    {formatCurrency(historyProject.amount_received)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-amber-600 dark:text-amber-400 uppercase font-semibold">Pending Balance</div>
+                  <div className="font-extrabold text-amber-600 dark:text-amber-400 text-sm sm:text-base mt-0.5">
+                    {formatCurrency(Math.max(0, historyProject.contract_amount - historyProject.amount_received))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Collection Progress</div>
+                  <div className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base mt-0.5">
+                    {historyProject.contract_amount > 0
+                      ? Math.round((historyProject.amount_received / historyProject.contract_amount) * 100)
+                      : 0}
+                    %
+                  </div>
+                </div>
+              </div>
+
+              {/* Sub-header with Add Payment Button */}
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <History className="w-4 h-4 text-amber-500" />
+                  Recorded Installments ({projectPayments.length})
+                </span>
+                <button
+                  onClick={() => openPaymentModal(historyProject)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-xs cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  + Record Payment
+                </button>
+              </div>
+
+              {/* Payments Ledger Table */}
+              <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                <table className="w-full text-left text-xs">
+                  <thead className="text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th className="py-3 px-3.5 font-semibold">Date</th>
+                      <th className="py-3 px-3.5 font-semibold">Amount Paid</th>
+                      <th className="py-3 px-3.5 font-semibold">Payment Mode</th>
+                      <th className="py-3 px-3.5 font-semibold">Milestone / Stage</th>
+                      <th className="py-3 px-3.5 font-semibold">Transaction Ref</th>
+                      <th className="py-3 px-3.5 font-semibold">Received By & Notes</th>
+                      <th className="py-3 px-3.5 font-semibold text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {paymentsLoading ? (
+                      <tr>
+                        <td colSpan={7} className="py-10 text-center text-slate-400">
+                          <Loader2 className="w-5 h-5 animate-spin mx-auto text-emerald-500 mb-2" />
+                          Loading payment ledger...
+                        </td>
+                      </tr>
+                    ) : projectPayments.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-10 text-center text-slate-400 space-y-2">
+                          <Receipt className="w-8 h-8 mx-auto opacity-30" />
+                          <div className="font-semibold text-xs">No detailed installments recorded in the ledger yet.</div>
+                          <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                            Click &quot;+ Record Payment&quot; above to log an advance, fabrication installment, or site settlement.
+                          </p>
+                        </td>
+                      </tr>
+                    ) : (
+                      projectPayments.map((pay) => (
+                        <tr
+                          key={pay.id}
+                          className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+                        >
+                          <td className="py-3 px-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap font-medium">
+                            {formatDateDisplay(pay.payment_date)}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+                              + {formatCurrency(pay.amount)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            {getPaymentModeBadge(pay.payment_mode)}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-semibold">
+                              {pay.stage || "Milestone Payment"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                            {pay.reference_id || "—"}
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-600 dark:text-slate-300 max-w-xs">
+                            <div className="font-medium text-slate-800 dark:text-slate-200">
+                              {pay.received_by ? `Collector: ${pay.received_by}` : ""}
+                            </div>
+                            <div className="text-slate-400 text-[11px] truncate">
+                              {pay.notes || "—"}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3.5 text-right whitespace-nowrap">
+                            <button
+                              onClick={() => handleDeletePayment(pay.id)}
+                              disabled={deletingPaymentId === pay.id}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                              title="Delete payment record"
+                            >
+                              {deletingPaymentId === pay.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Footer Notice */}
+              <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <span>
+                  All payments are stored with individual relationships and audit history.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setHistoryProject(null)}
+                  className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* UPGRADED RECORD PROJECT PAYMENT MODAL                    */}
+        {/* ======================================================== */}
         {paymentProject && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 my-auto shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 my-auto shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-emerald-500" />
-                  Record Project Payment
-                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
+                    <CreditCard className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                      Record Project Payment
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Logs installment into payment history and updates project balance.
+                    </p>
+                  </div>
+                </div>
                 <button
                   onClick={() => setPaymentProject(null)}
                   className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
@@ -678,34 +1032,154 @@ export default function ProjectsPage() {
                 </button>
               </div>
 
-              <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/30 space-y-1 text-xs">
-                <div className="font-bold text-slate-900 dark:text-white">{paymentProject.title}</div>
-                <div className="text-slate-500 dark:text-slate-400">
-                  Total Contract: ₹{Number(paymentProject.contract_amount).toLocaleString("en-IN")} | Currently Received: ₹{Number(paymentProject.amount_received).toLocaleString("en-IN")}
+              {/* Project Financial Summary Card */}
+              <div className="bg-emerald-50/60 dark:bg-emerald-950/20 p-3.5 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 space-y-1.5 text-xs">
+                <div className="font-bold text-slate-900 dark:text-white text-sm">
+                  {paymentProject.title}
+                </div>
+                <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 text-[11px]">
+                  <span>Total Contract: <strong>{formatCurrency(paymentProject.contract_amount)}</strong></span>
+                  <span>Currently Paid: <strong className="text-emerald-600 dark:text-emerald-400">{formatCurrency(paymentProject.amount_received)}</strong></span>
+                </div>
+                <div className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold pt-0.5">
+                  Current Balance Due: {formatCurrency(Math.max(0, paymentProject.contract_amount - paymentProject.amount_received))}
                 </div>
               </div>
 
-              <form onSubmit={handleRecordPayment} className="space-y-3 text-xs">
+              <form onSubmit={handleRecordPayment} className="space-y-3.5 text-xs">
+                {/* 1. Payment Amount */}
                 <div className="space-y-1">
                   <label className="font-semibold text-slate-700 dark:text-slate-300">
-                    Payment Amount to Add (₹) *
+                    Payment Amount Received (₹) *
                   </label>
                   <input
                     type="number"
                     required
                     min="1"
                     placeholder="e.g. 50000"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-slate-900 dark:text-white font-bold"
+                    value={paymentForm.amount}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-extrabold text-base focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                  {Number(paymentForm.amount) > 0 && (
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between pt-0.5">
+                      <span>Remaining balance after this payment:</span>
+                      <strong className="text-slate-900 dark:text-white">
+                        {formatCurrency(
+                          Math.max(
+                            0,
+                            paymentProject.contract_amount -
+                              (Number(paymentProject.amount_received || 0) + Number(paymentForm.amount))
+                          )
+                        )}
+                      </strong>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Payment Date & Payment Mode */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">
+                      Payment Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={paymentForm.paymentDate}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, paymentDate: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">
+                      Payment Mode *
+                    </label>
+                    <CustomSelect
+                      value={paymentForm.paymentMode}
+                      onChange={(val) => setPaymentForm({ ...paymentForm, paymentMode: val })}
+                      size="sm"
+                      dark={true}
+                      options={[
+                        { value: "UPI / PhonePe", label: "UPI / PhonePe / GPay" },
+                        { value: "Cash", label: "Cash Payment" },
+                        { value: "Bank Transfer", label: "Bank Transfer (NEFT/RTGS/IMPS)" },
+                        { value: "Cheque", label: "Bank Cheque" },
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Milestone / Stage */}
+                <div className="space-y-1">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">
+                    Payment Milestone / Stage *
+                  </label>
+                  <CustomSelect
+                    value={paymentForm.stage}
+                    onChange={(val) => setPaymentForm({ ...paymentForm, stage: val })}
+                    size="sm"
+                    dark={true}
+                    options={[
+                      { value: "Advance (Booking / Material Procurement)", label: "Advance (Booking / Material Procurement)" },
+                      { value: "Fabrication Stage (Mid-term)", label: "Fabrication Stage (Mid-term Progress)" },
+                      { value: "Pre-Dispatch / Delivery Installment", label: "Pre-Dispatch / Delivery Installment" },
+                      { value: "Site Glazing & Installation", label: "Site Glazing & Installation Installment" },
+                      { value: "Final Settlement / Handover", label: "Final Settlement / Handover" },
+                      { value: "Other Installment", label: "Other / Part Payment" },
+                    ]}
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                {/* 4. Reference ID & Received By */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">
+                      Transaction / Ref ID (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. UPI Ref # / Cheque #"
+                      value={paymentForm.referenceId}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, referenceId: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">
+                      Received By (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. S. Rambabu (Supervisor)"
+                      value={paymentForm.receivedBy}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, receivedBy: e.target.value })}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* 5. Notes / Remarks */}
+                <div className="space-y-1">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">
+                    Payment Notes / Remarks (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Handed over cash at site; receipt given"
+                    value={paymentForm.notes}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => setPaymentProject(null)}
-                    className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-medium"
+                    className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-medium"
                   >
                     Cancel
                   </button>
@@ -715,7 +1189,7 @@ export default function ProjectsPage() {
                     className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold transition shadow-sm cursor-pointer flex items-center gap-1.5"
                   >
                     {savingPayment && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    Save Payment
+                    Save Payment to Ledger
                   </button>
                 </div>
               </form>
@@ -723,10 +1197,10 @@ export default function ProjectsPage() {
           </div>
         )}
 
-        {/* Delete Project Modal */}
+        {/* Delete Project Confirmation Modal */}
         {deleteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-4 sm:p-6 my-auto shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-5 sm:p-6 my-auto shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
               <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 mx-auto">
                 <Trash2 className="w-6 h-6" />
               </div>
@@ -740,7 +1214,7 @@ export default function ProjectsPage() {
                   <span className="font-semibold text-slate-800 dark:text-slate-200">
                     &quot;{deleteTarget.title}&quot;
                   </span>
-                  ? This will remove the project from the database and reduce the client&apos;s Total Billed.
+                  ? This will remove the project and its payment history from the database.
                 </p>
               </div>
 
@@ -754,7 +1228,7 @@ export default function ProjectsPage() {
                   Cancel
                 </button>
                 <button
-                  type="button"
+                  type="submit"
                   onClick={confirmDeleteProject}
                   disabled={isDeleting}
                   className="flex-1 px-4 py-2 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-500 disabled:opacity-50 transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5"

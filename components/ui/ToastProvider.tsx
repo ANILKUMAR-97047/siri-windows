@@ -16,6 +16,7 @@ import {
   X,
   AlertOctagon,
   ShieldAlert,
+  Trash2,
 } from "lucide-react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
@@ -213,22 +214,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             role="dialog"
             aria-modal="true"
-            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 my-auto shadow-2xl space-y-5 text-center transform transition-all animate-in zoom-in-95 duration-200 select-none"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm sm:max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 my-auto shadow-2xl space-y-5 text-center transform transition-all animate-in zoom-in-95 duration-200 select-none"
           >
             {/* Modal Icon Badge */}
             <div
-              className={`w-14 h-14 rounded-2xl mx-auto flex items-center justify-center shadow-lg ${
+              className={`w-14 h-14 rounded-2xl mx-auto flex items-center justify-center shadow-lg transition-transform ${
                 modal.type === "danger"
-                  ? "bg-red-500/10 text-red-400 border border-red-500/30 shadow-red-500/20"
+                  ? "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/40 shadow-red-500/10"
                   : modal.type === "warning"
-                  ? "bg-amber-500/10 text-amber-400 border border-amber-500/30 shadow-amber-500/20"
+                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 shadow-amber-500/10"
                   : modal.type === "success"
-                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-emerald-500/20"
-                  : "bg-blue-500/10 text-blue-400 border border-blue-500/30 shadow-blue-500/20"
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40 shadow-emerald-500/10"
+                  : "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/40 shadow-blue-500/10"
               }`}
             >
               {modal.type === "danger" ? (
-                <AlertOctagon className="w-7 h-7" />
+                <Trash2 className="w-7 h-7" />
               ) : modal.type === "warning" ? (
                 <AlertTriangle className="w-7 h-7" />
               ) : modal.type === "success" ? (
@@ -240,21 +241,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
             {/* Title & Description */}
             <div className="space-y-2">
-              <h3 className="text-base font-bold text-white tracking-wide">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">
                 {modal.title}
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed px-2 whitespace-pre-wrap">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed px-2 whitespace-pre-wrap">
                 {modal.message}
               </p>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2.5 pt-2 border-t border-slate-800/80">
+            <div className="flex items-center gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
               {!modal.isAlertOnly && (
                 <button
                   type="button"
                   onClick={() => modal.resolve(false)}
-                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700/80 transition cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700/80 transition cursor-pointer"
                 >
                   {modal.cancelText || "Cancel"}
                 </button>
@@ -266,6 +267,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition shadow-md cursor-pointer ${
                   modal.type === "danger"
                     ? "bg-red-600 hover:bg-red-500 text-white shadow-red-600/20"
+                    : modal.type === "success"
+                    ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20"
+                    : modal.type === "info"
+                    ? "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20"
                     : "bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20"
                 }`}
               >

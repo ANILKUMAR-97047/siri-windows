@@ -51,6 +51,11 @@ export const queryKeys = {
     all: ["projects"] as const,
     list: () => [...queryKeys.projects.all, "list"] as const,
   },
+  projectPayments: {
+    all: ["project_payments"] as const,
+    byProject: (projectId?: string) =>
+      [...queryKeys.projectPayments.all, "by_project", projectId || "all"] as const,
+  },
   materials: {
     all: ["materials"] as const,
     list: () => [...queryKeys.materials.all, "list"] as const,

@@ -37,6 +37,20 @@ export interface ProjectRecord {
   } | null;
 }
 
+export interface ProjectPayment {
+  id: string;
+  project_id: string;
+  client_id?: string | null;
+  amount: number;
+  payment_date: string;
+  payment_mode: "UPI / PhonePe" | "Cash" | "Bank Transfer" | "Cheque" | string;
+  stage: string | null;
+  reference_id: string | null;
+  received_by: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 export function useProjectsQuery() {
   const supabase = createClient();
 
@@ -68,5 +82,25 @@ export function useProjectsQuery() {
       return (data || []) as unknown as ProjectRecord[];
     },
     staleTime: 1000 * 60 * 2, // Fresh for 2 minutes
+  });
+}
+
+export function useProjectPaymentsQuery(projectId?: string) {
+  return useQuery<ProjectPayment[]>({
+    queryKey: queryKeys.projectPayments.byProject(projectId),
+    queryFn: async () => {
+      const url = projectId
+        ? `/api/admin/projects/payments?project_id=${projectId}`
+        : `/api/admin/projects/payments`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to load project payments");
+      }
+      const data = await res.json();
+      return (data.payments || []) as ProjectPayment[];
+    },
+    enabled: Boolean(projectId),
+    staleTime: 1000 * 30, // Fresh for 30s
   });
 }
