@@ -357,6 +357,7 @@ export default function AdminExpensesPage() {
       setUploadingReceipt(true);
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("folder", "expenses");
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",

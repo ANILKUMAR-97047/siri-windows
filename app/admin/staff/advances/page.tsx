@@ -366,6 +366,7 @@ export default function StaffAdvancesPage() {
       setUploadingReceipt(true);
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("folder", "advances");
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",

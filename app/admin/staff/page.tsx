@@ -125,6 +125,7 @@ export default function StaffPage() {
     try {
       const data = new FormData();
       data.append("file", file);
+      data.append("folder", "staff");
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",
