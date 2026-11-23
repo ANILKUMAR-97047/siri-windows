@@ -4,6 +4,7 @@ import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FloatingButtons from "@/components/ui/FloatingButtons";
+import JsonLd from "@/components/seo/JsonLd";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default async function SiteLayout({
   return (
     <LanguageProvider initialContent={initialContent}>
       <SmoothScrollProvider>
+        <JsonLd />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
