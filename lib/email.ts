@@ -37,10 +37,8 @@ export async function sendPasswordResetEmail({
   resetUrl,
 }: SendResetEmailOptions): Promise<{ success: boolean; messageId?: string }> {
   const transporter = getMailTransporter();
-  const fromAddress =
-    process.env.MAIL_FROM ||
-    process.env.SMTP_USER ||
-    '"Siri Windows Admin Security" <sirienterprises8003@gmail.com>';
+  const senderEmail = process.env.SMTP_USER || "sirienterprises8003@gmail.com";
+  const fromAddress = `"Siri Windows & Doors" <${senderEmail}>`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -202,10 +200,15 @@ export async function sendPasswordResetEmail({
 
   const info = await transporter.sendMail({
     from: fromAddress,
+    replyTo: senderEmail,
     to,
     subject: "Reset Your Siri Windows Admin Password",
     text: `Hello ${name || "Administrator"},\n\nWe received a request to reset your password for your Siri Windows Admin account (${to}).\n\nReset your password here (link expires in 1 hour):\n${resetUrl}\n\nIf you did not request this, you can ignore this email.\n\nSiri Windows & Doors`,
     html: htmlContent,
+    headers: {
+      "X-Entity-Ref-ID": `pwdreset-${Date.now()}`,
+      "Auto-Submitted": "auto-generated",
+    },
   });
 
   return { success: true, messageId: info.messageId };
@@ -238,9 +241,8 @@ export async function sendCustomerInquiryConfirmationEmail({
   message,
 }: SendCustomerInquiryOptions): Promise<{ success: boolean; messageId?: string }> {
   const transporter = getMailTransporter();
-  const fromAddress =
-    process.env.MAIL_FROM ||
-    `"Siri Windows & Doors" <${process.env.SMTP_USER || "sirienterprises8003@gmail.com"}>`;
+  const senderEmail = process.env.SMTP_USER || "sirienterprises8003@gmail.com";
+  const fromAddress = `"Siri Windows & Doors" <${senderEmail}>`;
 
   const safeName = escapeHtml(name || "Valued Customer");
   const safeCity = escapeHtml(city || "Not Specified");
@@ -389,10 +391,10 @@ export async function sendCustomerInquiryConfirmationEmail({
       <div class="brand-subtitle">Tanuku Fabrication &amp; Installation Works</div>
     </div>
     <div class="content">
-      <div class="status-badge">&#10003; Request Received Successfully</div>
+      <div class="status-badge">&#10003; Inquiry Confirmation</div>
       <div class="greeting">Hello ${safeName},</div>
       <p class="text">
-        Thank you for contacting <strong>Siri Windows &amp; Doors</strong>! Your inquiry has been received by our workshop. Our team will review your specifications and contact you shortly to assist with measurement, custom fabrication options, and accurate pricing.
+        Thank you for contacting <strong>Siri Windows &amp; Doors</strong>. Your inquiry has been received by our workshop. Our team will review your specifications and contact you shortly to assist with measurement, custom fabrication options, and accurate pricing.
       </p>
 
       <table width="100%" cellpadding="0" cellspacing="0" class="summary-card" style="width: 100%; border-collapse: collapse; margin-bottom: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
@@ -419,8 +421,8 @@ export async function sendCustomerInquiryConfirmationEmail({
       </table>
 
       <div class="contact-box">
-        <strong>Need urgent assistance?</strong><br>
-        Feel free to call our Tanuku workshop directly at <strong>+91 9985168003</strong> or <strong>+91 7780127475</strong> during business hours.
+        <strong>Have questions or need direct assistance?</strong><br>
+        Feel free to call our Tanuku workshop directly at <strong>+91 99851 68003</strong> or <strong>+91 77801 27475</strong> during business hours.
       </div>
 
       <p class="text" style="margin-bottom: 0; font-size: 13px; color: #64748b;">
@@ -439,16 +441,16 @@ export async function sendCustomerInquiryConfirmationEmail({
 
   const textContent = `Hello ${safeName},
 
-Thank you for contacting Siri Windows & Doors!
+Thank you for contacting Siri Windows & Doors.
 
-Your request has been submitted successfully. Our team will review your requirements and contact you shortly to assist with measurement, custom fabrication options, and accurate pricing.
+Your inquiry has been received. Our team will review your requirements and contact you shortly to assist with measurement, custom fabrication options, and accurate pricing.
 
 Inquiry Summary:
 - Product Interest: ${product || "UPVC & Aluminium Windows & Doors"}
 - Location: ${city || "Not Specified"}
 ${message ? `- Message: "${message}"\n` : ""}
-Need immediate assistance?
-Call our Tanuku workshop directly at +91 98491 23456 / +91 98480 12345.
+Need direct assistance?
+Call our Tanuku workshop directly at +91 99851 68003 / +91 77801 27475.
 
 Warm regards,
 Customer Relations & Fabrication Team
@@ -457,10 +459,17 @@ Tanuku, West Godavari, Andhra Pradesh`;
 
   const info = await transporter.sendMail({
     from: fromAddress,
+    replyTo: senderEmail,
+    sender: senderEmail,
     to,
-    subject: "Your Request is Received – Siri Windows & Doors",
+    subject: "Thank you for contacting Siri Windows & Doors",
     text: textContent,
     html: htmlContent,
+    headers: {
+      "X-Entity-Ref-ID": `inquiry-${Date.now()}`,
+      "Auto-Submitted": "auto-generated",
+      "X-Auto-Response-Suppress": "All",
+    },
   });
 
   return { success: true, messageId: info.messageId };
