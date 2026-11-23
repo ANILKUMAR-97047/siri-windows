@@ -55,6 +55,15 @@ export const queryKeys = {
     all: ["materials"] as const,
     list: () => [...queryKeys.materials.all, "list"] as const,
   },
+  materialCategories: {
+    all: ["material_categories"] as const,
+    list: () => [...queryKeys.materialCategories.all, "list"] as const,
+  },
+  stockTransactions: {
+    all: ["stock_transactions"] as const,
+    list: (filters?: { material_id?: string; type?: string }) =>
+      [...queryKeys.stockTransactions.all, "list", filters || {}] as const,
+  },
   packages: {
     all: ["pricing_packages"] as const,
     list: () => [...queryKeys.packages.all, "list"] as const,
