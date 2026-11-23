@@ -30,6 +30,7 @@ import { toast, confirmModal } from "@/components/ui/ToastProvider";
 import { CustomSelect } from "@/components/ui/Select";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStaffListQuery, queryKeys } from "@/lib/queries";
+import { getTodayDateString } from "@/lib/date";
 
 interface StaffMember {
   id: string;
@@ -124,7 +125,7 @@ export default function StaffAdvancesPage() {
   // Form State
   const [formState, setFormState] = useState({
     staff_id: "",
-    advance_date: now.toISOString().split("T")[0],
+    advance_date: getTodayDateString(),
     amount: "",
     payment_mode: "Cash",
     reason: "",
@@ -245,7 +246,7 @@ export default function StaffAdvancesPage() {
     setEditingId(null);
     setFormState({
       staff_id: staffList.length > 0 ? staffList[0].id : "",
-      advance_date: new Date().toISOString().split("T")[0],
+      advance_date: getTodayDateString(),
       amount: "",
       payment_mode: "Cash",
       reason: "",

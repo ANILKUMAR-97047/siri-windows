@@ -83,7 +83,8 @@ export default function StaffPage() {
     phone: "",
     email: "",
     photo_url: "",
-    baseSalary: 20000,
+    dailyWage: 700,
+    baseSalary: 21000,
     status: "active",
   });
 
@@ -96,7 +97,8 @@ export default function StaffPage() {
       phone: "",
       email: "",
       photo_url: "",
-      baseSalary: 20000,
+      dailyWage: 700,
+      baseSalary: 21000,
       status: "active",
     });
     setIsModalOpen(true);
@@ -104,6 +106,8 @@ export default function StaffPage() {
 
   const handleOpenEdit = (staff: StaffMember) => {
     setEditingStaff(staff);
+    const monthly = Number(staff.base_salary || 0);
+    const daily = monthly ? Math.round(monthly / 30) : 700;
     setFormData({
       name: staff.name,
       role: staff.role,
@@ -111,7 +115,8 @@ export default function StaffPage() {
       phone: staff.phone,
       email: staff.email || "",
       photo_url: staff.photo_url || "",
-      baseSalary: Number(staff.base_salary || 0),
+      dailyWage: daily,
+      baseSalary: monthly,
       status: staff.status || "active",
     });
     setIsModalOpen(true);
@@ -470,15 +475,26 @@ export default function StaffPage() {
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
               <div>
-                <span className="text-[10px] text-slate-400">Monthly Base Salary</span>
-                <div className="font-bold text-slate-900 dark:text-white text-sm">
-                  ₹{Number(staff.base_salary || 0).toLocaleString("en-IN")}
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                    Fixed Daily Wage
+                  </span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-semibold">
+                    Sundays ₹0
+                  </span>
                 </div>
+                <div className="font-extrabold text-slate-900 dark:text-white text-base">
+                  ₹{(staff.base_salary ? Math.round(Number(staff.base_salary) / 30) : 0).toLocaleString("en-IN")}{" "}
+                  <span className="text-xs font-normal text-slate-400">/ day</span>
+                </div>
+                <span className="text-[10px] text-slate-400 block -mt-0.5">
+                  Monthly Base: ₹{Number(staff.base_salary || 0).toLocaleString("en-IN")} (30d ref)
+                </span>
               </div>
               <Link
                 href="/admin/staff/salaries"
                 onClick={(e) => e.stopPropagation()}
-                className="text-xs text-amber-600 dark:text-amber-400 font-semibold hover:underline"
+                className="text-xs text-amber-600 dark:text-amber-400 font-semibold hover:underline flex items-center gap-1 shrink-0"
               >
                 Salary Records →
               </Link>
@@ -609,20 +625,63 @@ export default function StaffPage() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700 dark:text-slate-300">
-                  Base Monthly Salary (₹) *
-                </label>
-                <input
-                  type="number"
-                  required
-                  value={formData.baseSalary}
-                  onChange={(e) =>
-                    setFormData({ ...formData, baseSalary: Number(e.target.value) })
-                  }
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 focus:ring-1 focus:ring-amber-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                    <span>Fixed Daily Wage (₹ / Day) *</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+                      Sundays unpaid
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-sm">₹</span>
+                    <input
+                      type="number"
+                      required
+                      value={formData.dailyWage || ""}
+                      onChange={(e) => {
+                        const daily = Number(e.target.value) || 0;
+                        setFormData((prev) => ({
+                          ...prev,
+                          dailyWage: daily,
+                          baseSalary: daily * 30,
+                        }));
+                      }}
+                      placeholder="e.g. 700"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 pl-7 focus:ring-1 focus:ring-amber-500 font-bold text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400">Fixed rate paid for present days only (Sundays ₹0)</p>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                    <span>Base Monthly Salary (₹) *</span>
+                    <span className="text-[10px] text-slate-400 font-normal">30-day ref</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-sm">₹</span>
+                    <input
+                      type="number"
+                      required
+                      value={formData.baseSalary || ""}
+                      onChange={(e) => {
+                        const monthly = Number(e.target.value) || 0;
+                        setFormData((prev) => ({
+                          ...prev,
+                          baseSalary: monthly,
+                          dailyWage: monthly ? Math.round(monthly / 30) : 0,
+                        }));
+                      }}
+                      placeholder="e.g. 21000"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 pl-7 focus:ring-1 focus:ring-amber-500 font-semibold"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400">Auto-synced: ₹{formData.dailyWage || 0}/day × 30 days</p>
+                </div>
               </div>
+              <p className="text-[11px] text-slate-400 -mt-1">
+                Fixed daily wage is used for attendance-based monthly salary calculations (Present Days × Daily Wage).
+              </p>
 
               {/* Profile Photo Upload / Path */}
               <div className="space-y-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">

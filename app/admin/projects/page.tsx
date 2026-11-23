@@ -40,6 +40,7 @@ import {
   queryKeys,
   type ProjectPayment,
 } from "@/lib/queries";
+import { getTodayDateString } from "@/lib/date";
 
 interface ClientRef {
   id: string;
@@ -116,7 +117,7 @@ export default function ProjectsPage() {
   const [paymentProject, setPaymentProject] = useState<ProjectRecord | null>(null);
   const [paymentForm, setPaymentForm] = useState({
     amount: "",
-    paymentDate: new Date().toISOString().split("T")[0],
+    paymentDate: getTodayDateString(),
     paymentMode: "UPI / PhonePe",
     stage: "Advance (Booking / Material Procurement)",
     referenceId: "",
@@ -258,7 +259,7 @@ export default function ProjectsPage() {
         updated_at: new Date().toISOString(),
       };
       if (newStatus === "completed") {
-        updates.actual_completion = new Date().toISOString().split("T")[0];
+        updates.actual_completion = getTodayDateString();
       }
 
       const { error } = await (supabase.from("projects") as any)
@@ -327,7 +328,7 @@ export default function ProjectsPage() {
         body: JSON.stringify({
           project_id: paymentProject.id,
           amount: amt,
-          payment_date: paymentForm.paymentDate || new Date().toISOString().split("T")[0],
+          payment_date: paymentForm.paymentDate || getTodayDateString(),
           payment_mode: paymentForm.paymentMode,
           stage: paymentForm.stage,
           reference_id: paymentForm.referenceId.trim() || null,
@@ -367,7 +368,7 @@ export default function ProjectsPage() {
       setPaymentProject(null);
       setPaymentForm({
         amount: "",
-        paymentDate: new Date().toISOString().split("T")[0],
+        paymentDate: getTodayDateString(),
         paymentMode: "UPI / PhonePe",
         stage: "Advance (Booking / Material Procurement)",
         referenceId: "",
@@ -481,7 +482,7 @@ export default function ProjectsPage() {
     setPaymentProject(p);
     setPaymentForm({
       amount: "",
-      paymentDate: new Date().toISOString().split("T")[0],
+      paymentDate: getTodayDateString(),
       paymentMode: "UPI / PhonePe",
       stage: p.amount_received === 0
         ? "Advance (Booking / Material Procurement)"

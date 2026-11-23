@@ -29,6 +29,7 @@ import PermissionGuard from "@/components/admin/PermissionGuard";
 import { CustomSelect } from "@/components/ui/Select";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClientsQuery, useStaffListQuery, queryKeys } from "@/lib/queries";
+import { getTodayDateString, addDaysToDateString } from "@/lib/date";
 
 interface StaffRef {
   id: string;
@@ -457,10 +458,8 @@ export default function ClientsPage() {
 
   // Open Project Modal directly for this client
   const openProjectModalForClient = (client: Client) => {
-    // Default target completion date to 30 days ahead
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + 30);
-    const defaultDateStr = targetDate.toISOString().split("T")[0];
+    // Default target completion date to 30 days ahead without timezone skew
+    const defaultDateStr = addDaysToDateString(getTodayDateString(), 30);
 
     // Pick first supervisor from staff list if available
     const defaultSupervisor =
@@ -574,7 +573,7 @@ export default function ClientsPage() {
           expected_completion: projectForm.expected_completion || null,
           supervisor_id: finalSupervisorId,
           supervisor_name: finalSupervisorName,
-          start_date: new Date().toISOString().split("T")[0],
+          start_date: getTodayDateString(),
           notes: projectForm.notes.trim() || null,
         },
       ]);

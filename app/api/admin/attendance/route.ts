@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { getTodayDateString } from "@/lib/date";
 
 interface AttendancePayload {
   id?: string;
@@ -16,7 +17,7 @@ interface AttendancePayload {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const date = searchParams.get("date") || new Date().toISOString().split("T")[0];
+    const date = searchParams.get("date") || getTodayDateString();
     const [year, month] = date.split("-");
 
     const supabase = getAdminClient();

@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import { toast, confirmModal } from "@/components/ui/ToastProvider";
+import { getTodayDateString } from "@/lib/date";
 import { CustomSelect } from "@/components/ui/Select";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queries";
@@ -132,7 +133,7 @@ export default function AdminExpensesPage() {
 
   // Form State
   const [formState, setFormState] = useState({
-    expense_date: now.toISOString().split("T")[0],
+    expense_date: getTodayDateString(),
     expense_type: "company" as "company" | "personal",
     category: COMPANY_CATEGORIES[0],
     title: "",
@@ -238,7 +239,7 @@ export default function AdminExpensesPage() {
     setModalMode("create");
     setEditingId(null);
     setFormState({
-      expense_date: new Date().toISOString().split("T")[0],
+      expense_date: getTodayDateString(),
       expense_type: type,
       category: type === "company" ? COMPANY_CATEGORIES[0] : PERSONAL_CATEGORIES[0],
       title: "",

@@ -25,6 +25,8 @@ import {
   UserCheck,
   Coins,
   AlertCircle,
+  Info,
+  Lock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import PermissionGuard from "@/components/admin/PermissionGuard";
@@ -163,6 +165,39 @@ export default function SalariesPage() {
     currentMonthCount: 0,
     pastMonthCount: 0,
     items: [],
+  });
+
+  // Attendance-Based Daily Wage & Working Days (Excluding Sundays)
+  const [attendancePayroll, setAttendancePayroll] = useState<{
+    loading: boolean;
+    totalCalendarDays: number;
+    sundaysCount: number;
+    workingDaysCount: number;
+    presentDays: number;
+    halfDays: number;
+    absentDays: number;
+    onLeaveDays: number;
+    unmarkedDays: number;
+    payableDays: number;
+    dailyRate: number;
+    earnedBaseSalary: number;
+    totalOvertimeHours: number;
+    calculationMode: "daily_wage" | "fixed_monthly";
+  }>({
+    loading: false,
+    totalCalendarDays: 30,
+    sundaysCount: 4,
+    workingDaysCount: 26,
+    presentDays: 0,
+    halfDays: 0,
+    absentDays: 0,
+    onLeaveDays: 0,
+    unmarkedDays: 0,
+    payableDays: 0,
+    dailyRate: 700,
+    earnedBaseSalary: 0,
+    totalOvertimeHours: 0,
+    calculationMode: "daily_wage",
   });
 
   // Selected Staff Details
@@ -419,6 +454,162 @@ export default function SalariesPage() {
     return 0;
   };
 
+  // Calculate attendance-based salary (Option 1: Fixed Daily Rate × Present Days, excluding Sundays)
+  const fetchAttendancePayroll = async (
+    staffId: string,
+    month: number,
+    year: number,
+    baseMonthlySalary: number
+  ) => {
+    if (!staffId) return;
+
+    setAttendancePayroll((prev) => ({ ...prev, loading: true }));
+
+    try {
+      const totalCalendarDays = new Date(year, month, 0).getDate();
+      const startOfMonth = `${year}-${String(month).padStart(2, "0")}-01`;
+      const endOfMonth = `${year}-${String(month).padStart(2, "0")}-${String(totalCalendarDays).padStart(2, "0")}`;
+
+      // 1. Identify Sundays (weekly off-days: dayOfWeek === 0)
+      let sundaysCount = 0;
+      let workingDaysCount = 0;
+      const sundaysSet = new Set<string>();
+
+      for (let day = 1; day <= totalCalendarDays; day++) {
+        const dateObj = new Date(year, month - 1, day);
+        const dayStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        if (dateObj.getDay() === 0) {
+          sundaysCount++;
+          sundaysSet.add(dayStr);
+        } else {
+          workingDaysCount++;
+        }
+      }
+
+      // 2. Fetch staff attendance records for this month
+      const { data: attRecords, error } = await (
+        supabase.from("staff_attendance" as any) as any
+      )
+        .select("date, status, overtime_hours")
+        .eq("staff_id", staffId)
+        .gte("date", startOfMonth)
+        .lte("date", endOfMonth);
+
+      if (error) {
+        console.warn("Could not fetch staff attendance:", error.message);
+      }
+
+      const attMap = new Map<string, any>();
+      (attRecords || []).forEach((r: any) => {
+        attMap.set(r.date, r);
+      });
+
+      // 3. Count non-Sunday attendance
+      let presentDays = 0;
+      let halfDays = 0;
+      let absentDays = 0;
+      let onLeaveDays = 0;
+      let unmarkedDays = 0;
+      let totalOvertimeHours = 0;
+
+      const staff = staffList.find((s) => s.id === staffId);
+      const joinDate = staff?.join_date;
+
+      for (let day = 1; day <= totalCalendarDays; day++) {
+        const dayStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+        // Skip days prior to joining date
+        if (joinDate && dayStr < joinDate) {
+          continue;
+        }
+
+        // Sundays are strictly excluded (unpaid weekly off)
+        if (sundaysSet.has(dayStr)) {
+          continue;
+        }
+
+        const rec = attMap.get(dayStr);
+        if (!rec || !rec.status) {
+          unmarkedDays++;
+        } else if (rec.status === "present") {
+          presentDays++;
+        } else if (rec.status === "half_day") {
+          halfDays++;
+        } else if (rec.status === "on_leave") {
+          onLeaveDays++;
+        } else if (rec.status === "absent") {
+          absentDays++;
+        }
+
+        if (rec?.overtime_hours) {
+          totalOvertimeHours += Number(rec.overtime_hours) || 0;
+        }
+      }
+
+      // Total payable days (Full days = 1.0, Half days = 0.5, Sundays = 0)
+      const payableDays = presentDays + halfDays * 0.5;
+
+      // Daily Rate: Base Monthly / 30 (e.g. 21,000 / 30 = 700)
+      const dailyRate = baseMonthlySalary > 0 ? Math.round(baseMonthlySalary / 30) : 700;
+      const earnedBaseSalary = Math.round(payableDays * dailyRate);
+
+      setAttendancePayroll({
+        loading: false,
+        totalCalendarDays,
+        sundaysCount,
+        workingDaysCount,
+        presentDays,
+        halfDays,
+        absentDays,
+        onLeaveDays,
+        unmarkedDays,
+        payableDays,
+        dailyRate,
+        earnedBaseSalary,
+        totalOvertimeHours,
+        calculationMode: "daily_wage",
+      });
+
+      // Auto-set the Base Salary in the salary form to the earned amount
+      setSalaryForm((prev) => ({
+        ...prev,
+        baseSalary: earnedBaseSalary,
+      }));
+
+      return {
+        dailyRate,
+        earnedBaseSalary,
+        payableDays,
+      };
+    } catch (err) {
+      console.error("Attendance payroll calculation error:", err);
+      setAttendancePayroll((prev) => ({ ...prev, loading: false }));
+      return null;
+    }
+  };
+
+  const handleDailyRateChange = (newRate: number) => {
+    const earned = Math.round(attendancePayroll.payableDays * newRate);
+    setAttendancePayroll((prev) => ({
+      ...prev,
+      dailyRate: newRate,
+      earnedBaseSalary: earned,
+    }));
+    if (attendancePayroll.calculationMode === "daily_wage") {
+      setSalaryForm((prev) => ({ ...prev, baseSalary: earned }));
+    }
+  };
+
+  const handleSetCalculationMode = (mode: "daily_wage" | "fixed_monthly") => {
+    setAttendancePayroll((prev) => ({ ...prev, calculationMode: mode }));
+    if (mode === "daily_wage") {
+      setSalaryForm((prev) => ({ ...prev, baseSalary: attendancePayroll.earnedBaseSalary }));
+    } else {
+      const fullBase = selectedStaffMember?.base_salary || 0;
+      setSalaryForm((prev) => ({ ...prev, baseSalary: fullBase }));
+    }
+  };
+
   // Open modal to create/process a new payout
   const handleOpenCreateModal = async () => {
     const defaultStaff = staffList.length > 0 ? staffList[0] : null;
@@ -439,8 +630,13 @@ export default function SalariesPage() {
     }
 
     let advTotal = 0;
+    let earnedBase = defaultStaff?.base_salary || 0;
     if (defaultStaff?.id) {
       advTotal = await fetchStaffPendingAdvances(defaultStaff.id, currentMonth, currentYear);
+      const attRes = await fetchAttendancePayroll(defaultStaff.id, currentMonth, currentYear, defaultStaff.base_salary || 0);
+      if (attRes) {
+        earnedBase = attRes.earnedBaseSalary;
+      }
     }
 
     setModalMode("create");
@@ -449,7 +645,7 @@ export default function SalariesPage() {
       staff_id: defaultStaff?.id || "",
       month: currentMonth,
       year: currentYear,
-      baseSalary: defaultStaff?.base_salary || 0,
+      baseSalary: earnedBase,
       allowance: 0,
       deduction: advTotal,
       paymentMode: "Bank Transfer",
@@ -467,13 +663,16 @@ export default function SalariesPage() {
     const advTotal = await fetchStaffPendingAdvances(rec.staff_id, rec.month, rec.year);
     const initialDeduction = Number(rec.deductions) > 0 ? Number(rec.deductions) : advTotal;
 
+    const attRes = await fetchAttendancePayroll(rec.staff_id, rec.month, rec.year, Number(staffMember?.base_salary || standardBase));
+    const finalBase = attRes ? attRes.earnedBaseSalary : standardBase;
+
     setModalMode("pay");
     setActiveRecordId(rec.id);
     setSalaryForm({
       staff_id: rec.staff_id,
       month: rec.month,
       year: rec.year,
-      baseSalary: standardBase,
+      baseSalary: finalBase,
       allowance: Number(rec.allowances) || 0,
       deduction: initialDeduction,
       paymentMode: rec.payment_mode || "UPI / PhonePe",
@@ -507,32 +706,42 @@ export default function SalariesPage() {
     }
 
     const advTotal = await fetchStaffPendingAdvances(staffId, targetMonth, targetYear);
+    const attRes = await fetchAttendancePayroll(staffId, targetMonth, targetYear, selected?.base_salary ?? 0);
+
     setSalaryForm((prev) => ({
       ...prev,
       staff_id: staffId,
       month: targetMonth,
       year: targetYear,
-      baseSalary: selected?.base_salary ?? 0,
+      baseSalary: attRes ? attRes.earnedBaseSalary : (selected?.base_salary || 0),
       deduction: advTotal,
     }));
   };
 
   // When salary month changes in modal, auto-update pending advances for that specific month
   const handleMonthChange = async (newMonth: number) => {
+    const staff = staffList.find((s) => s.id === salaryForm.staff_id);
     const advTotal = await fetchStaffPendingAdvances(salaryForm.staff_id, newMonth, salaryForm.year);
+    const attRes = await fetchAttendancePayroll(salaryForm.staff_id, newMonth, salaryForm.year, staff?.base_salary ?? 0);
+
     setSalaryForm((prev) => ({
       ...prev,
       month: newMonth,
+      baseSalary: attRes ? attRes.earnedBaseSalary : prev.baseSalary,
       deduction: advTotal,
     }));
   };
 
   // When salary year changes in modal, auto-update pending advances for that specific year
   const handleYearChange = async (newYear: number) => {
+    const staff = staffList.find((s) => s.id === salaryForm.staff_id);
     const advTotal = await fetchStaffPendingAdvances(salaryForm.staff_id, salaryForm.month, newYear);
+    const attRes = await fetchAttendancePayroll(salaryForm.staff_id, salaryForm.month, newYear, staff?.base_salary ?? 0);
+
     setSalaryForm((prev) => ({
       ...prev,
       year: newYear,
+      baseSalary: attRes ? attRes.earnedBaseSalary : prev.baseSalary,
       deduction: advTotal,
     }));
   };
@@ -570,6 +779,10 @@ export default function SalariesPage() {
           : 0;
 
       let finalNotes = salaryForm.notes;
+      if (attendancePayroll.calculationMode === "daily_wage" && attendancePayroll.payableDays > 0) {
+        const attNote = `Daily Wage: ${attendancePayroll.payableDays} days @ ₹${attendancePayroll.dailyRate}/day (${attendancePayroll.sundaysCount} Sundays unpaid)`;
+        finalNotes = finalNotes ? `${attNote}. ${finalNotes}` : attNote;
+      }
       if (!finalNotes && deductionAmt > 0 && carryForwardAmt > 0) {
         finalNotes = `Partial advance installment of ₹${deductionAmt.toLocaleString("en-IN")}. Balance ₹${carryForwardAmt.toLocaleString("en-IN")} carried forward.`;
       }
@@ -674,11 +887,11 @@ export default function SalariesPage() {
       prev.map((r) =>
         r.id === id
           ? {
-              ...r,
-              status: "paid" as const,
-              payment_mode: mode,
-              paid_at: paidAt,
-            }
+            ...r,
+            status: "paid" as const,
+            payment_mode: mode,
+            paid_at: paidAt,
+          }
           : r
       )
     );
@@ -708,14 +921,14 @@ export default function SalariesPage() {
       prev.map((r) =>
         r.id === id
           ? {
-              ...r,
-              status: "on_leave" as const,
-              base_salary: 0,
-              allowances: 0,
-              deductions: 0,
-              net_salary: 0,
-              notes: "Unpaid Leave / Inactive for this month",
-            }
+            ...r,
+            status: "on_leave" as const,
+            base_salary: 0,
+            allowances: 0,
+            deductions: 0,
+            net_salary: 0,
+            notes: "Unpaid Leave / Inactive for this month",
+          }
           : r
       )
     );
@@ -1017,43 +1230,39 @@ export default function SalariesPage() {
             <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-xs">
               <button
                 onClick={() => setFilterStatus("all")}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
-                  filterStatus === "all"
-                    ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${filterStatus === "all"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
               >
                 All Records ({records.length})
               </button>
               <button
                 onClick={() => setFilterStatus("pending")}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                  filterStatus === "pending"
-                    ? "bg-amber-500 text-white shadow-xs"
-                    : "text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40"
-                }`}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 ${filterStatus === "pending"
+                  ? "bg-amber-500 text-white shadow-xs"
+                  : "text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                  }`}
               >
                 <Clock className="w-3.5 h-3.5" />
                 Pending ({allPendingCount})
               </button>
               <button
                 onClick={() => setFilterStatus("paid")}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                  filterStatus === "paid"
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                }`}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 ${filterStatus === "paid"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                  }`}
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Paid Out ({paidCount})
               </button>
               <button
                 onClick={() => setFilterStatus("on_leave")}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                  filterStatus === "on_leave"
-                    ? "bg-purple-600 text-white shadow-xs"
-                    : "text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40"
-                }`}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 ${filterStatus === "on_leave"
+                  ? "bg-purple-600 text-white shadow-xs"
+                  : "text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40"
+                  }`}
               >
                 <UserX className="w-3.5 h-3.5" />
                 On Leave ({allOnLeaveCount})
@@ -1064,11 +1273,10 @@ export default function SalariesPage() {
               {/* Quick Jump to Current Month */}
               <button
                 onClick={() => setFilterMonth(currentMonthKey)}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
-                  filterMonth === currentMonthKey
-                    ? "bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-300"
-                    : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                }`}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${filterMonth === currentMonthKey
+                  ? "bg-emerald-50 border-emerald-300 text-emerald-700 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-300"
+                  : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  }`}
               >
                 <Calendar className="w-3.5 h-3.5 text-emerald-500" />
                 Current Month ({MONTH_NAMES[now.getMonth()]} {now.getFullYear()})
@@ -1127,13 +1335,12 @@ export default function SalariesPage() {
                   { value: "all", label: `All Staff Members (${staffList.length})` },
                   ...staffList.map((s) => ({
                     value: s.id,
-                    label: `${s.name} (${s.role})${
-                      s.status === "on_leave"
-                        ? " • (On Leave)"
-                        : s.status === "inactive"
+                    label: `${s.name} (${s.role})${s.status === "on_leave"
+                      ? " • (On Leave)"
+                      : s.status === "inactive"
                         ? " • (Inactive)"
                         : ""
-                    }`,
+                      }`,
                   })),
                 ]}
               />
@@ -1243,7 +1450,12 @@ export default function SalariesPage() {
 
                       {/* Base Salary */}
                       <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap font-medium">
-                        ₹{Number(rec.base_salary || 0).toLocaleString("en-IN")}
+                        <div>₹{Number(rec.base_salary || 0).toLocaleString("en-IN")}</div>
+                        {rec.notes && rec.notes.includes("Daily Wage:") && (
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal block">
+                            {rec.notes.split("(")[0].replace("Daily Wage: ", "").trim()}
+                          </span>
+                        )}
                       </td>
 
                       {/* Allowances */}
@@ -1425,9 +1637,8 @@ export default function SalariesPage() {
                     size="sm"
                     options={staffList.map((s) => ({
                       value: s.id,
-                      label: `${s.name} (${s.role})${
-                        s.join_date ? ` • Joined ${formatDate(s.join_date)}` : ""
-                      }`,
+                      label: `${s.name} (${s.role})${s.join_date ? ` • Joined ${formatDate(s.join_date)}` : ""
+                        }`,
                     }))}
                   />
                 </div>
@@ -1467,20 +1678,125 @@ export default function SalariesPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-semibold text-slate-700 dark:text-slate-300">
-                      Base Salary (₹) *
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-slate-400" />
+                        Base Salary (₹) *
+                      </span>
+                      {/* <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                        Fixed from Profile
+                      </span> */}
                     </label>
                     <input
                       type="number"
                       value={salaryForm.baseSalary}
-                      onChange={(e) =>
-                        setSalaryForm({ ...salaryForm, baseSalary: Number(e.target.value) })
-                      }
+                      readOnly
+                      tabIndex={-1}
                       required
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-800 dark:text-slate-100 font-semibold"
+                      className="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-800 dark:text-slate-100 font-bold cursor-not-allowed select-none focus:outline-none"
                     />
+                    {/* <p className="text-[10px] text-slate-400">
+                      Non-editable here. To modify rate, edit in Staff Directory.
+                    </p> */}
                   </div>
                 </div>
+
+                {/* Attendance & Sunday-Excluded Working Days Calculation Card */}
+                {salaryForm.staff_id && (
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-100 text-xs">
+                        <CalendarCheck className="w-4 h-4 text-emerald-500" />
+                        <span>Attendance & Working Days ({MONTH_NAMES[salaryForm.month - 1]} {salaryForm.year})</span>
+                      </div>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                        Sundays Unpaid (₹0)
+                      </span>
+                    </div>
+
+                    {attendancePayroll.loading ? (
+                      <div className="py-3 flex items-center justify-center gap-2 text-slate-400 text-xs">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                        <span>Calculating attendance & working days...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[11px]">
+                          <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                            <div className="text-slate-400 text-[10px]">Total Days</div>
+                            <div className="font-bold text-slate-800 dark:text-slate-200">{attendancePayroll.totalCalendarDays} days</div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                            <div className="text-amber-600 dark:text-amber-400 text-[10px]">Sundays (Off)</div>
+                            <div className="font-bold text-amber-600 dark:text-amber-400">{attendancePayroll.sundaysCount} days (₹0)</div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                            <div className="text-emerald-600 dark:text-emerald-400 text-[10px]">Days Present</div>
+                            <div className="font-bold text-emerald-600 dark:text-emerald-400">
+                              {attendancePayroll.presentDays} {attendancePayroll.halfDays > 0 ? `+ ${attendancePayroll.halfDays} half` : ""}
+                            </div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                            <div className="text-slate-500 dark:text-slate-400 text-[10px]">Payable Days</div>
+                            <div className="font-bold text-slate-900 dark:text-white text-xs">{attendancePayroll.payableDays} days</div>
+                          </div>
+                        </div>
+
+                        {/* Daily Rate & Earned Calculation Strip (Fixed / Non-Editable) */}
+                        <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[11px] text-slate-500 font-medium">Daily Rate:</span>
+                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">₹</span>
+                              <span className="text-xs font-extrabold text-slate-900 dark:text-white">
+                                {attendancePayroll.dailyRate}
+                              </span>
+                              <span className="text-[10px] text-slate-400">/ day</span>
+                            </div>
+                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                              <Lock className="w-2.5 h-2.5" />
+                              Fixed from Staff Directory
+                            </span>
+                          </div>
+
+                          <div className="text-left sm:text-right">
+                            <span className="text-[10px] text-slate-400 block">Earned Base Salary</span>
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                              {attendancePayroll.payableDays} days × ₹{attendancePayroll.dailyRate} = ₹{attendancePayroll.earnedBaseSalary.toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Attendance-Based Daily Wage Applied Confirmation */}
+                        <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <div>
+                              <span className="font-bold text-emerald-900 dark:text-emerald-200">
+                                Attendance Daily Wage Applied
+                              </span>
+                              <span className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 block">
+                                Applied for all roles ({attendancePayroll.sundaysCount} Sundays unpaid: ₹0)
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
+                              ₹{attendancePayroll.earnedBaseSalary.toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                        </div>
+
+                        {attendancePayroll.unmarkedDays > 0 && (
+                          <div className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                            <Info className="w-3 h-3 shrink-0" />
+                            <span>Note: {attendancePayroll.unmarkedDays} working days in this month have no attendance records marked.</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
 
                 {/* Pre-Joining Date Warning Banner */}
                 {isBeforeJoinDate && (
@@ -1594,11 +1910,10 @@ export default function SalariesPage() {
                             deduction: pendingAdvancesInfo.totalAll,
                           }))
                         }
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
-                          salaryForm.deduction === pendingAdvancesInfo.totalAll
-                            ? "bg-amber-600 text-white shadow-xs"
-                            : "bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 hover:bg-amber-200"
-                        }`}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${salaryForm.deduction === pendingAdvancesInfo.totalAll
+                          ? "bg-amber-600 text-white shadow-xs"
+                          : "bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 hover:bg-amber-200"
+                          }`}
                       >
                         ✓ Deduct All (₹{pendingAdvancesInfo.totalAll.toLocaleString("en-IN")})
                       </button>
@@ -1613,11 +1928,10 @@ export default function SalariesPage() {
                               deduction: pendingAdvancesInfo.currentMonthTotal,
                             }))
                           }
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
-                            salaryForm.deduction === pendingAdvancesInfo.currentMonthTotal
-                              ? "bg-amber-600 text-white shadow-xs"
-                              : "bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 hover:bg-amber-200"
-                          }`}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${salaryForm.deduction === pendingAdvancesInfo.currentMonthTotal
+                            ? "bg-amber-600 text-white shadow-xs"
+                            : "bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 hover:bg-amber-200"
+                            }`}
                         >
                           Deduct {getMonthName(salaryForm.month)} Only (₹{pendingAdvancesInfo.currentMonthTotal.toLocaleString("en-IN")})
                         </button>
@@ -1641,11 +1955,10 @@ export default function SalariesPage() {
                             };
                           })
                         }
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${
-                          salaryForm.deduction === 0
-                            ? "bg-rose-600 text-white shadow-xs"
-                            : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
-                        }`}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 ${salaryForm.deduction === 0
+                          ? "bg-rose-600 text-white shadow-xs"
+                          : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200"
+                          }`}
                         title="Do not deduct advances this month. Advances will remain pending and carry forward to next month."
                       >
                         Skip Deduction This Month (₹0)
@@ -1766,22 +2079,21 @@ export default function SalariesPage() {
                       isBeforeJoinDate ||
                       (modalMode === "create" && !!existingPaidRecord)
                     }
-                    className={`px-5 py-2 rounded-lg font-bold transition shadow-sm flex items-center gap-1.5 ${
-                      isBeforeJoinDate
-                        ? "bg-rose-600/70 dark:bg-rose-700/70 text-white cursor-not-allowed opacity-80"
-                        : modalMode === "create" && existingPaidRecord
+                    className={`px-5 py-2 rounded-lg font-bold transition shadow-sm flex items-center gap-1.5 ${isBeforeJoinDate
+                      ? "bg-rose-600/70 dark:bg-rose-700/70 text-white cursor-not-allowed opacity-80"
+                      : modalMode === "create" && existingPaidRecord
                         ? "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
                         : "bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer"
-                    }`}
+                      }`}
                   >
                     {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     {isBeforeJoinDate
                       ? "Cannot Pay (Prior to Join Date)"
                       : modalMode === "create" && existingPaidRecord
-                      ? "Already Paid for this Month"
-                      : modalMode === "pay" && existingPaidRecord
-                      ? "Update Paid Record"
-                      : "Confirm Payout"}
+                        ? "Already Paid for this Month"
+                        : modalMode === "pay" && existingPaidRecord
+                          ? "Update Paid Record"
+                          : "Confirm Payout"}
                   </button>
                 </div>
               </form>

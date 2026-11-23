@@ -29,6 +29,12 @@ import {
 import PermissionGuard from "@/components/admin/PermissionGuard";
 import AttendancePdfModal from "@/components/admin/AttendancePdfModal";
 import { toast } from "@/components/ui/ToastProvider";
+import {
+  getTodayDateString,
+  addDaysToDateString,
+  formatDateTitle,
+  formatDateDisplay,
+} from "@/lib/date";
 
 interface StaffMember {
   id: string;
@@ -55,17 +61,7 @@ interface AttendanceRecord {
 }
 
 function formatDate(dateStr?: string | null): string {
-  if (!dateStr) return "";
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
+  return formatDateDisplay(dateStr);
 }
 
 export default function StaffAttendancePage() {
@@ -89,8 +85,7 @@ export default function StaffAttendancePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split("T")[0]; // YYYY-MM-DD
+    return getTodayDateString(); // Standardized to Indian Standard Time (Asia/Kolkata)
   });
   const [viewMode, setViewMode] = useState<"daily" | "monthly">("daily");
   const [searchQuery, setSearchQuery] = useState("");
@@ -101,6 +96,22 @@ export default function StaffAttendancePage() {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [pdfMode, setPdfMode] = useState<"all" | "individual">("all");
   const [selectedPdfStaff, setSelectedPdfStaff] = useState<StaffMember | null>(null);
+
+  // Automatically advance to today when midnight 12:00 AM arrives in Indian Standard Time (Asia/Kolkata)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const currentToday = getTodayDateString();
+      setSelectedDate((prev) => {
+        // If the user had yesterday's date selected, automatically advance to today
+        const yesterday = addDaysToDateString(currentToday, -1);
+        if (prev === yesterday) {
+          return currentToday;
+        }
+        return prev;
+      });
+    }, 15000); // Check every 15s around midnight
+    return () => clearInterval(timer);
+  }, []);
 
   // Month parameters derived from selectedDate
   const [yearStr, monthStr] = selectedDate.split("-");
@@ -150,15 +161,13 @@ export default function StaffAttendancePage() {
     fetchData();
   }, [fetchData]);
 
-  // Navigate dates
+  // Navigate dates without timezone shifts
   const changeDate = (days: number) => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + days);
-    setSelectedDate(d.toISOString().split("T")[0]);
+    setSelectedDate((prev) => addDaysToDateString(prev, days));
   };
 
   const jumpToToday = () => {
-    setSelectedDate(new Date().toISOString().split("T")[0]);
+    setSelectedDate(getTodayDateString());
   };
 
   // Open All Staff PDF Modal
@@ -397,19 +406,9 @@ export default function StaffAttendancePage() {
     return list;
   }, [staffEmployedInSelectedMonth, searchQuery]);
 
-  // Formatted date string (e.g. Friday, 20 November 2026)
+  // Formatted date string in Indian Standard Time (e.g. Tuesday, 24 November 2026)
   const formattedDateTitle = useMemo(() => {
-    try {
-      const d = new Date(selectedDate);
-      return d.toLocaleDateString("en-IN", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
-    } catch {
-      return selectedDate;
-    }
+    return formatDateTitle(selectedDate);
   }, [selectedDate]);
 
   return (
@@ -542,7 +541,11 @@ export default function StaffAttendancePage() {
 
             <button
               onClick={jumpToToday}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100 transition cursor-pointer"
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                selectedDate === getTodayDateString()
+                  ? "text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 shadow-xs font-bold"
+                  : "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100"
+              }`}
             >
               Today
             </button>

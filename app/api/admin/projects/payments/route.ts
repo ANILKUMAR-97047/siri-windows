@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { getTodayDateString } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    const cleanPaymentDate = payment_date || new Date().toISOString().split("T")[0];
+    const cleanPaymentDate = payment_date || getTodayDateString();
     const cleanPaymentMode = payment_mode || "UPI / PhonePe";
     const cleanStage = stage || "Milestone Payment";
 
