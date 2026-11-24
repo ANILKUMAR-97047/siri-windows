@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { getAdminClient } from "@/lib/supabase/admin";
 import LanguageProvider from "@/components/providers/LanguageProvider";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
@@ -5,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FloatingButtons from "@/components/ui/FloatingButtons";
 import JsonLd from "@/components/seo/JsonLd";
+import type { LanguageCode } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +16,17 @@ export default async function SiteLayout({
   children: React.ReactNode;
 }) {
   let initialContent: Record<string, any> = {};
+  let initialLanguage: LanguageCode = "en";
+
+  try {
+    const cookieStore = await cookies();
+    const langCookie = cookieStore.get("siri_language")?.value;
+    if (langCookie === "en" || langCookie === "te" || langCookie === "hi") {
+      initialLanguage = langCookie;
+    }
+  } catch {
+    // Graceful fallback
+  }
 
   try {
     const supabase = getAdminClient();
@@ -32,7 +45,7 @@ export default async function SiteLayout({
   }
 
   return (
-    <LanguageProvider initialContent={initialContent}>
+    <LanguageProvider initialContent={initialContent} initialLanguage={initialLanguage}>
       <SmoothScrollProvider>
         <JsonLd />
         <Navbar />

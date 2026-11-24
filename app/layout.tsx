@@ -112,7 +112,10 @@ export default function RootLayout({
       lang="en"
       className={`${poppins.variable} ${manrope.variable} antialiased`}
     >
-      <body className="min-h-screen flex flex-col bg-background text-foreground font-sans">
+      <body
+        suppressHydrationWarning
+        className="min-h-screen flex flex-col bg-background text-foreground font-sans"
+      >
         <QueryProvider>
           <ToastProvider>{children}</ToastProvider>
         </QueryProvider>

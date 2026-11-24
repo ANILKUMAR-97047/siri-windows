@@ -61,6 +61,7 @@ export default function AboutSection() {
                 src="/images/about.jpg"
                 alt="Siri Enterprises — premium window installation workshop"
                 fill
+                priority
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />

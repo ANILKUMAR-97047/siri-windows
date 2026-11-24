@@ -16,6 +16,7 @@ interface LanguageContextValue {
 }
 
 const STORAGE_KEY = "siri-windows-language";
+const COOKIE_KEY = "siri_language";
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 function isLanguageCode(value: string | null): value is LanguageCode {
@@ -25,15 +26,13 @@ function isLanguageCode(value: string | null): value is LanguageCode {
 export default function LanguageProvider({
   children,
   initialContent,
+  initialLanguage = "en",
 }: {
   children: React.ReactNode;
   initialContent?: Record<string, any>;
+  initialLanguage?: LanguageCode;
 }) {
-  const [language, setLanguageState] = useState<LanguageCode>(() => {
-    if (typeof window === "undefined") return "en";
-    const savedLanguage = window.localStorage.getItem(STORAGE_KEY);
-    return isLanguageCode(savedLanguage) ? savedLanguage : "en";
-  });
+  const [language, setLanguageState] = useState<LanguageCode>(initialLanguage);
 
   const [dynamicContent, setDynamicContent] = useState<Record<string, any> | null>(() => {
     if (initialContent && Object.keys(initialContent).length > 0) {
@@ -59,9 +58,30 @@ export default function LanguageProvider({
       .catch(() => {});
   }, []);
 
+  // Sync client-side language preference safely after hydration to avoid SSR mismatch
+  useEffect(() => {
+    try {
+      const savedLanguage = window.localStorage.getItem(STORAGE_KEY);
+      if (isLanguageCode(savedLanguage)) {
+        if (savedLanguage !== language) {
+          setLanguageState(savedLanguage);
+        }
+        document.cookie = `${COOKIE_KEY}=${savedLanguage}; path=/; max-age=31536000; SameSite=Lax`;
+      } else if (initialLanguage) {
+        window.localStorage.setItem(STORAGE_KEY, initialLanguage);
+        document.cookie = `${COOKIE_KEY}=${initialLanguage}; path=/; max-age=31536000; SameSite=Lax`;
+      }
+    } catch {
+      // Ignore storage/cookie access errors
+    }
+  }, []);
+
   const setLanguage = (nextLanguage: LanguageCode) => {
     setLanguageState(nextLanguage);
-    window.localStorage.setItem(STORAGE_KEY, nextLanguage);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, nextLanguage);
+    } catch {}
+    document.cookie = `${COOKIE_KEY}=${nextLanguage}; path=/; max-age=31536000; SameSite=Lax`;
     document.documentElement.lang = nextLanguage;
   };
 
@@ -103,9 +123,9 @@ export default function LanguageProvider({
     const faqTr = faq?.translations?.[language];
 
     const statLabels: Record<LanguageCode, string[]> = {
-      en: ["Years Experience", "Projects Completed", "Happy Clients", "Districts Covered"],
-      te: ["సంవత్సరాల అనుభవం", "పూర్తైన ప్రాజెక్టులు", "సంతోషకర కస్టమర్లు", "జిల్లాలు విస్తరించి"],
-      hi: ["वर्षों का अनुभव", "पूरे प्रोजेक्ट", "खुश ग्राहक", "जिलों में सेवा"],
+      en: ["Years Experience", "Projects Completed", "Happy Clients", "Cities Covered"],
+      te: ["సంవత్సరాల అనుభవం", "పూర్తైన ప్రాజెక్టులు", "సంతోషకర కస్టమర్లు", "కవర్ అయిన నగరాలు"],
+      hi: ["वर्षों का अनुभव", "पूरे प्रोजेक्ट", "खुश ग्राहक", "कवर किए गए शहर"],
     };
 
     const mergedContent: WebsiteContent = {

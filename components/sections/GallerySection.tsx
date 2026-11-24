@@ -182,8 +182,8 @@ export default function GallerySection() {
         </div>
 
         {/* Dynamic Category Filter Tabs */}
-        <Reveal>
-          <div className="flex items-center justify-center gap-2 mb-10 overflow-x-auto whitespace-nowrap scrollbar-none py-1">
+        <Reveal className="w-full">
+          <div className="flex items-center justify-start sm:justify-center gap-2 mb-10 overflow-x-auto whitespace-nowrap scrollbar-none py-2 px-1 sm:px-0 w-full touch-pan-x">
             {categoryTabs.map((cat) => {
               const label = getCategoryLabel(cat);
               const isActive = activeFilter === cat.slug;
@@ -192,7 +192,7 @@ export default function GallerySection() {
                 <button
                   key={cat.slug}
                   onClick={() => setActiveFilter(cat.slug)}
-                  className={`px-5 py-2 text-sm font-semibold rounded-xl cursor-pointer transition-all duration-200 min-h-[44px] shrink-0 ${
+                  className={`px-4 sm:px-5 py-2 text-sm font-semibold rounded-xl cursor-pointer transition-all duration-200 min-h-[44px] shrink-0 ${
                     isActive
                       ? "bg-navy-900 text-white shadow-lg shadow-navy-900/20 scale-105"
                       : "bg-off-white text-slate-600 hover:bg-blue-100/70 hover:text-slate-900"
