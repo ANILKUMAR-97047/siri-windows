@@ -1,6 +1,6 @@
 -- Migration: Create staff_advances and admin_expenses tables
 
--- 1. Table: staff_advances (Employee Salary Advances / Kharcha for month-end salary settlement)
+-- 1. Table: staff_advances (Employee Salary Advances / Expenses for month-end salary settlement)
 CREATE TABLE IF NOT EXISTS staff_advances (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     staff_id UUID NOT NULL REFERENCES staff(id) ON DELETE CASCADE,

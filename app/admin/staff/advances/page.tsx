@@ -409,7 +409,7 @@ export default function StaffAdvancesPage() {
           </Link>
           <div className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 font-bold shadow-xs flex items-center gap-1.5">
             <Coins className="w-3.5 h-3.5 text-amber-500" />
-            Salary Advances & Kharcha
+            Salary Advances & Expenses
           </div>
           <Link
             href="/admin/staff/salaries"
@@ -429,7 +429,7 @@ export default function StaffAdvancesPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                  Employee Salary Advances & Kharcha
+                  Staff Salary Advances & Expenses
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Track individual worker cash advances with Date & Day. Automatically deducted in month-end salary payout.
@@ -785,7 +785,7 @@ export default function StaffAdvancesPage() {
                       {modalMode === "create" ? "Log Employee Salary Advance" : "Edit Advance Record"}
                     </h3>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Enter cash advance / kharcha given to the worker
+                      Enter cash advance / Expenses given to the worker
                     </p>
                   </div>
                 </div>

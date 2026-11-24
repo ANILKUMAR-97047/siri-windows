@@ -93,7 +93,7 @@ export default function AdminHeader() {
     if (pathname.startsWith("/admin/leads")) return "Leads & Inquiries";
     if (pathname.startsWith("/admin/clients")) return "Clients & Onboarding";
     if (pathname.startsWith("/admin/projects")) return "Projects Management";
-    if (pathname.startsWith("/admin/staff/advances")) return "Staff Advances & Kharcha";
+    if (pathname.startsWith("/admin/staff/advances")) return "Staff Advances & Expenses";
     if (pathname.startsWith("/admin/staff/salaries")) return "Monthly Salaries";
     if (pathname.startsWith("/admin/staff")) return "Staff & Team";
     if (pathname.startsWith("/admin/stock")) return "Stock & Materials";
@@ -137,12 +137,12 @@ export default function AdminHeader() {
 
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {/* System Status indicator */}
-          <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 sm:px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+          {/* <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 sm:px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
             <span className="hidden sm:inline font-medium text-slate-700 dark:text-slate-300 text-[11px]">
               System Online
             </span>
-          </div>
+          </div> */}
 
           {/* User Profile Pill & Actions */}
           <div className="flex items-center gap-1 sm:gap-2 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800">

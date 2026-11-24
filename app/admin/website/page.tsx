@@ -711,11 +711,10 @@ export default function WebsiteContentPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-3.5 px-3.5 text-xs font-semibold border-b-2 flex items-center gap-2 transition whitespace-nowrap cursor-pointer shrink-0 ${
-                    active
-                      ? "border-amber-500 text-amber-600 dark:text-amber-400 font-bold"
-                      : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
+                  className={`py-3.5 px-3.5 text-xs font-semibold border-b-2 flex items-center gap-2 transition whitespace-nowrap cursor-pointer shrink-0 ${active
+                    ? "border-amber-500 text-amber-600 dark:text-amber-400 font-bold"
+                    : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   {tab.label}
@@ -738,33 +737,30 @@ export default function WebsiteContentPage() {
                     <button
                       type="button"
                       onClick={() => setEditingLang("en")}
-                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                        editingLang === "en"
-                          ? "bg-amber-500 text-slate-950 shadow-xs"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                      }`}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1 cursor-pointer ${editingLang === "en"
+                        ? "bg-amber-500 text-slate-950 shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                        }`}
                     >
                       🇬🇧 English
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingLang("te")}
-                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                        editingLang === "te"
-                          ? "bg-amber-500 text-slate-950 shadow-xs"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                      }`}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1 cursor-pointer ${editingLang === "te"
+                        ? "bg-amber-500 text-slate-950 shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                        }`}
                     >
                       🇮🇳 తెలుగు
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingLang("hi")}
-                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                        editingLang === "hi"
-                          ? "bg-amber-500 text-slate-950 shadow-xs"
-                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                      }`}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1 cursor-pointer ${editingLang === "hi"
+                        ? "bg-amber-500 text-slate-950 shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                        }`}
                     >
                       🇮🇳 हिन्दी
                     </button>
@@ -1353,9 +1349,8 @@ export default function WebsiteContentPage() {
                                 className="cursor-pointer"
                               >
                                 <Star
-                                  className={`w-3.5 h-3.5 ${
-                                    star <= rev.rating ? "fill-amber-500" : "text-slate-300"
-                                  }`}
+                                  className={`w-3.5 h-3.5 ${star <= rev.rating ? "fill-amber-500" : "text-slate-300"
+                                    }`}
                                 />
                               </button>
                             ))}

@@ -432,7 +432,7 @@ export default function StaffAttendancePage() {
             className="px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5"
           >
             <Coins className="w-3.5 h-3.5 text-amber-500" />
-            Salary Advances & Kharcha
+            Salary Advances & Expenses
           </Link>
           <Link
             href="/admin/staff/salaries"
@@ -541,11 +541,10 @@ export default function StaffAttendancePage() {
 
             <button
               onClick={jumpToToday}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                selectedDate === getTodayDateString()
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${selectedDate === getTodayDateString()
                   ? "text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 shadow-xs font-bold"
                   : "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100"
-              }`}
+                }`}
             >
               Today
             </button>
@@ -559,21 +558,19 @@ export default function StaffAttendancePage() {
           <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
             <button
               onClick={() => setViewMode("daily")}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                viewMode === "daily"
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${viewMode === "daily"
                   ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-              }`}
+                }`}
             >
               Daily Register
             </button>
             <button
               onClick={() => setViewMode("monthly")}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                viewMode === "monthly"
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${viewMode === "monthly"
                   ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-              }`}
+                }`}
             >
               Monthly Summary (Backend Synced)
             </button>
@@ -714,9 +711,8 @@ export default function StaffAttendancePage() {
                       return (
                         <tr
                           key={staff.id}
-                          className={`hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition ${
-                            !isEmployedOnDate ? "opacity-60 bg-slate-50/40 dark:bg-slate-900/30" : ""
-                          }`}
+                          className={`hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition ${!isEmployedOnDate ? "opacity-60 bg-slate-50/40 dark:bg-slate-900/30" : ""
+                            }`}
                         >
                           {/* Staff details */}
                           <td className="py-3.5 px-4">
@@ -769,44 +765,40 @@ export default function StaffAttendancePage() {
                                 <button
                                   type="button"
                                   onClick={() => handleStatusChange(staff.id, "present")}
-                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
-                                    currentStatus === "present"
+                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${currentStatus === "present"
                                       ? "bg-emerald-600 text-white shadow-xs"
                                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                                  }`}
+                                    }`}
                                 >
                                   Present
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleStatusChange(staff.id, "half_day")}
-                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
-                                    currentStatus === "half_day"
+                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${currentStatus === "half_day"
                                       ? "bg-amber-500 text-white shadow-xs"
                                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                                  }`}
+                                    }`}
                                 >
                                   Half Day
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleStatusChange(staff.id, "on_leave")}
-                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
-                                    currentStatus === "on_leave"
+                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${currentStatus === "on_leave"
                                       ? "bg-purple-600 text-white shadow-xs"
                                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                                  }`}
+                                    }`}
                                 >
                                   On Leave
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleStatusChange(staff.id, "absent")}
-                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${
-                                    currentStatus === "absent"
+                                  className={`px-2 py-1 rounded text-[11px] font-semibold transition cursor-pointer ${currentStatus === "absent"
                                       ? "bg-red-600 text-white shadow-xs"
                                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                                  }`}
+                                    }`}
                                 >
                                   Absent
                                 </button>
@@ -827,9 +819,9 @@ export default function StaffAttendancePage() {
                                 !isEmployedOnDate
                                   ? ""
                                   : rec?.check_in_time ||
-                                    (currentStatus === "present" || currentStatus === "half_day"
-                                      ? "09:00"
-                                      : "")
+                                  (currentStatus === "present" || currentStatus === "half_day"
+                                    ? "09:00"
+                                    : "")
                               }
                               onChange={(e) =>
                                 handleFieldChange(staff.id, "check_in_time", e.target.value)
@@ -851,9 +843,9 @@ export default function StaffAttendancePage() {
                                 !isEmployedOnDate
                                   ? ""
                                   : rec?.check_out_time ||
-                                    (currentStatus === "present"
-                                      ? "18:30"
-                                      : currentStatus === "half_day"
+                                  (currentStatus === "present"
+                                    ? "18:30"
+                                    : currentStatus === "half_day"
                                       ? "13:30"
                                       : "")
                               }
@@ -1026,13 +1018,12 @@ export default function StaffAttendancePage() {
 
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <span
-                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase ${
-                                staff.status === "active"
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase ${staff.status === "active"
                                   ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
                                   : staff.status === "on_leave"
-                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
-                                  : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
-                              }`}
+                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                                    : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                                }`}
                             >
                               {staff.status}
                             </span>

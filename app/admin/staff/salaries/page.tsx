@@ -1112,7 +1112,7 @@ export default function SalariesPage() {
             className="px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition flex items-center gap-1.5"
           >
             <Coins className="w-3.5 h-3.5 text-amber-500" />
-            Salary Advances & Kharcha
+            Salary Advances & Expenses
           </Link>
           <div className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs flex items-center gap-1.5">
             <Banknote className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />

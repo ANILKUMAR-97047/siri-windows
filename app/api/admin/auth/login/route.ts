@@ -7,9 +7,35 @@ import {
   SESSION_COOKIE_NAME,
   AdminUser,
 } from "@/lib/auth";
+import {
+  checkLoginRateLimit,
+  recordFailedLogin,
+  clearLoginRateLimit,
+  getClientIp,
+} from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+    const rateLimitKey = `login_${clientIp}`;
+
+    // Brute-force protection: check rate limit
+    const limitStatus = checkLoginRateLimit(rateLimitKey);
+    if (!limitStatus.allowed) {
+      const waitMinutes = Math.ceil((limitStatus.retryAfterSec || 60) / 60);
+      return NextResponse.json(
+        {
+          error: `Too many failed login attempts. For security, access has been temporarily blocked. Please try again in ${waitMinutes} minute(s).`,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(limitStatus.retryAfterSec || 900),
+          },
+        }
+      );
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -32,6 +58,7 @@ export async function POST(request: Request) {
       .single();
 
     if (error || !user) {
+      recordFailedLogin(rateLimitKey);
       return NextResponse.json(
         { error: "Invalid email or password." },
         { status: 401 }
@@ -48,11 +75,15 @@ export async function POST(request: Request) {
     // Verify password hash
     const isValid = verifyPassword(password, user.password_hash, user.password_salt);
     if (!isValid) {
+      recordFailedLogin(rateLimitKey);
       return NextResponse.json(
         { error: "Invalid email or password." },
         { status: 401 }
       );
     }
+
+    // Login successful — clear failed attempts for this IP
+    clearLoginRateLimit(rateLimitKey);
 
     const adminProfile: AdminUser = {
       id: user.id,
