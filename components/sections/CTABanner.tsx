@@ -9,7 +9,6 @@ export default function CTABanner() {
   return (
     <section className="relative py-20 md:py-28 overflow-hidden bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800">
       {/* Animated background layers */}
-      <div className="absolute inset-0 window-pane-pattern opacity-[0.03]" />
       <div className="absolute inset-0 bg-gradient-to-r from-gold-500/5 via-transparent to-blue-400/5" />
 
       {/* Decorative accent line */}

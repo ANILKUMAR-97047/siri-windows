@@ -108,8 +108,6 @@ export default function HeroSection() {
         />
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-navy-950/80 via-navy-950/60 to-navy-950/85" />
-        {/* Window pane pattern */}
-        <div className="absolute inset-0 window-pane-pattern opacity-[0.02]" />
       </div>
 
       {/* Content */}

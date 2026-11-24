@@ -11,9 +11,6 @@ export default function Footer() {
 
   return (
     <footer className="relative bg-navy-950 text-white/80 overflow-hidden">
-      {/* Window pane pattern overlay */}
-      <div className="absolute inset-0 window-pane-pattern pointer-events-none" />
-
       <div className="relative container-wide py-16 md:py-20">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
           {/* Brand Column */}
