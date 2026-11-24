@@ -18,7 +18,7 @@ const PUBLIC_ADMIN_API_PATHS = [
   "/api/admin/auth/verify-reset-token",
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAdminPage = pathname.startsWith("/admin");
