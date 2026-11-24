@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Phone, MapPin, Clock, Mail, Send, CheckCircle, Loader2, ChevronDown } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import { useContent } from "@/components/providers/LanguageProvider";
@@ -31,6 +31,30 @@ export default function ContactSection() {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Auto-fill selected product when requested from Products section
+  useEffect(() => {
+    const handleSelectProduct = (e: Event) => {
+      const customEvent = e as CustomEvent<{ productName: string }>;
+      const targetName = customEvent.detail?.productName;
+      if (!targetName) return;
+
+      const options = (contactFormContent.productOptions as string[]) || [];
+      const match = options.find((opt: string) =>
+        opt.toLowerCase().includes(targetName.toLowerCase()) ||
+        targetName.toLowerCase().includes(opt.toLowerCase())
+      );
+
+      if (match) {
+        setFormData((prev) => ({ ...prev, product: match }));
+      } else {
+        setFormData((prev) => ({ ...prev, product: targetName }));
+      }
+    };
+
+    window.addEventListener("siri-select-product", handleSelectProduct);
+    return () => window.removeEventListener("siri-select-product", handleSelectProduct);
+  }, [contactFormContent.productOptions]);
 
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
